@@ -8,6 +8,7 @@ function App() {
   const cryptogramArray = [];
   const cryptogramMap = new Map();
   let lastFocusedInput = null;
+  let lives = 3;
 
   function getRandomFromValidPool(min, max, excludeArray) {
     const pool = [];
@@ -90,6 +91,11 @@ function App() {
       e ? e.target.disabled = true : lastFocusedInput.disabled = true;
       e ? e.target.classList.add('correct-answer') : lastFocusedInput.classList.add('correct-answer');
       moveToNextInput(inputId, [...allInputs]);
+    } else {
+      lives = lives - 1;
+      if(lives === 0) {
+        alert('GameOver!');
+      }
     }
   }
 
