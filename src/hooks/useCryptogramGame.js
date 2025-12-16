@@ -13,8 +13,8 @@ export function useCryptogramGame(message, initialLives = 3) {
     );
     const [activeIndex, setActiveIndex] = useState(() => {
         let index = 0;
-        for(let i = 0; i < chars.length; i++) {
-            if(revealedIndices.includes(i) || !/[A-Z]/.test(chars[i])) {
+        for (let i = 0; i < chars.length; i++) {
+            if (revealedIndices.includes(i) || !/[A-Z]/.test(chars[i])) {
                 continue;
             }
             index = i;
@@ -50,27 +50,43 @@ export function useCryptogramGame(message, initialLives = 3) {
         }));
     }, [chars, cryptogramMap, guesses, revealedIndices]);
 
-    
-    const moveToNextIndex = useCallback(() => {
-        setActiveIndex((current) => {
-            for (let i = current + 1; i < chars.length; i++) {
-                if (/[A-Z]/.test(chars[i])) return i;
+
+    const moveToNextIndex = useCallback(
+        (currentIndex, revealed) => {
+            const length = chars.length;
+
+            for (let step = 1; step <= length; step++) {
+                const i = (currentIndex + step) % length;
+
+                if (/[A-Z]/.test(chars[i]) && !revealed.includes(i)) {
+                    return i;
+                }
             }
-            return current;
-        });
-    }, [chars]);
+
+            // All characters revealed — stay put
+            return currentIndex;
+        },
+        [chars]
+    );
+
 
     const guessLetter = useCallback(
         (index, letter) => {
             if (board[index].letter === letter) {
                 setGuesses((g) => ({ ...g, [index]: letter }));
-                moveToNextIndex();
+
+                setRevealedIndices((prev) => {
+                    const next = [...prev, index];
+                    setActiveIndex(moveToNextIndex(index, next));
+                    return next;
+                });
             } else {
                 setLives((l) => l - 1);
             }
         },
         [board, moveToNextIndex]
     );
+
 
     useEffect(() => {
         const handleKeyDown = (e) => {
@@ -87,6 +103,7 @@ export function useCryptogramGame(message, initialLives = 3) {
         board,
         lives,
         guessLetter,
+        setActiveIndex,
         activeIndex
     };
 }

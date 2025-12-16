@@ -1,17 +1,20 @@
 // components/Cell.jsx
-export default function Cell({ cell, isActive, onGuess }) {
+export default function Cell({ cell, isActive, onGuess, onFocus }) {
   return (
     <div className="flex flex-col items-center mx-1">
       <input
-        className={`w-8 h-8 text-center border
+        className={`w-8 h-8 text-center border focus:outline-none
         ${isActive ? "border-blue-500" : ""}
-        ${cell.revealed ? "bg-green-200" : ""}`}
+        ${cell.revealed ? "bg-green-200" : ""} focus:border-blue-500`}
         disabled={cell.revealed}
         maxLength={1}
         value={cell.revealed ? cell.letter : undefined}
+        onFocus={onFocus}
+        onClick={onFocus}
         onChange={(e) =>
           onGuess(cell.index, e.target.value.toUpperCase())
         }
+        on
       />
       <span>{cell.value}</span>
     </div>

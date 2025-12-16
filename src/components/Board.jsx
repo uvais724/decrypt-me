@@ -1,7 +1,7 @@
 // components/Board.jsx
 import Cell from "./Cell";
 
-export default function Board({ board, onGuess, activeIndex }) {
+export default function Board({ board, onGuess, activeIndex, setActiveIndex }) {
   return (
     <div className="flex justify-center flex-wrap my-5">
       {board.map((cell, index) =>
@@ -10,7 +10,7 @@ export default function Board({ board, onGuess, activeIndex }) {
             {cell.letter}
           </span>
         ) : (
-          <Cell key={`cell-${index}`} cell={cell} isActive={index === activeIndex} onGuess={onGuess}/>
+          <Cell key={`cell-${index}`} cell={cell} isActive={index === activeIndex} onGuess={onGuess} onFocus={() => setActiveIndex(cell.index)} />
         )
       )}
     </div>
