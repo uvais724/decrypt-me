@@ -7,6 +7,7 @@ export function useCryptogramGame(message, initialLives = 3) {
     const chars = useMemo(() => message.split(""), [message]);
 
     const [lives, setLives] = useState(initialLives);
+    const [isGameComplete, setIsGameComplete] = useState(false);
     const [guesses, setGuesses] = useState({});
     const [revealedIndices, setRevealedIndices] = useState(() =>
         pickRandomIndices(chars, 3)
@@ -58,14 +59,13 @@ export function useCryptogramGame(message, initialLives = 3) {
     const disabledKeys = useMemo(() => {
         const revealedSet = new Set(revealedIndices);
         const disabled = new Set();
-    
+
         Object.entries(letterToIndices).forEach(([letter, indices]) => {
             const allRevealed = indices.every((i) => revealedSet.has(i));
             if (allRevealed) disabled.add(letter);
         });
         return disabled;
     }, [letterToIndices, revealedIndices]);
-
 
     const board = useMemo(() => {
         return chars.map((char, index) => ({
@@ -95,9 +95,14 @@ export function useCryptogramGame(message, initialLives = 3) {
         [chars]
     );
 
+    const totalLetters = useMemo(
+        () => chars.filter((c) => /[A-Z]/.test(c)).length,
+        [chars]
+    );
 
     const guessLetter = useCallback(
         (index, letter) => {
+
             if (board[index].letter === letter) {
                 setGuesses((g) => ({ ...g, [index]: letter }));
 
@@ -106,6 +111,10 @@ export function useCryptogramGame(message, initialLives = 3) {
                     setActiveIndex(moveToNextIndex(index, next));
                     return next;
                 });
+
+                if (revealedIndices.length + 1 === totalLetters) {
+                    setIsGameComplete(true);
+                }
             } else {
                 setLives((l) => l - 1);
 
@@ -116,7 +125,7 @@ export function useCryptogramGame(message, initialLives = 3) {
                 }, 500);
             }
         },
-        [board, moveToNextIndex]
+        [board, totalLetters, moveToNextIndex]
     );
 
 
@@ -138,7 +147,8 @@ export function useCryptogramGame(message, initialLives = 3) {
         setActiveIndex,
         activeIndex,
         errorIndex,
-        disabledKeys
+        disabledKeys,
+        isGameComplete
     };
 }
 

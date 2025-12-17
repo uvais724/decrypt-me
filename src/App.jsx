@@ -7,10 +7,14 @@ import Lives from "./components/Lives";
 const MESSAGE = "I FEEL DEEPLY CONNECTED WHEN WE TALK HONESTLY.";
 
 export default function App() {
-  const { board, lives, guessLetter, activeIndex, setActiveIndex, errorIndex, disabledKeys } = useCryptogramGame(MESSAGE);
+  const { board, lives, guessLetter, activeIndex, setActiveIndex, errorIndex, disabledKeys, isGameComplete } = useCryptogramGame(MESSAGE);
 
   if (lives === 0) {
     return <h1 className="text-center text-3xl">Game Over</h1>;
+  }
+
+  if(isGameComplete) {
+    return <h1 className="text-center text-3xl">You Won!</h1>;
   }
 
   return (
