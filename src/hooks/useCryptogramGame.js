@@ -9,6 +9,7 @@ export function useCryptogramGame(message, initialLives = 3) {
     const [lives, setLives] = useState(initialLives);
     const [isGameComplete, setIsGameComplete] = useState(false);
     const [guesses, setGuesses] = useState({});
+    const [hintsUsed, setHintsUsed] = useState(0);
     const [revealedIndices, setRevealedIndices] = useState(() =>
         pickRandomIndices(chars, 3)
     );
@@ -140,6 +141,26 @@ export function useCryptogramGame(message, initialLives = 3) {
     }, [guessLetter, disabledKeys, activeIndex]);
 
 
+    const revealRandomCell = useCallback(() => {
+        const unrevealed = board.filter(
+            c => /[A-Z]/.test(c.letter) && !c.revealed
+        );
+
+        if (unrevealed.length === 0) return;
+
+        const chosen = unrevealed[Math.floor(Math.random() * unrevealed.length)];
+
+        setRevealedIndices(prev => {
+            const next = [...prev, chosen.index];
+            setActiveIndex(moveToNextIndex(chosen.index, next));
+            return next;
+        });
+
+        setGuesses(g => ({ ...g, [chosen.index]: chosen.letter }));
+        setHintsUsed(h => ({ ...h, revealCell: h.revealCell + 1 }));
+    }, [board, moveToNextIndex]);
+
+
     return {
         board,
         lives,
@@ -148,7 +169,8 @@ export function useCryptogramGame(message, initialLives = 3) {
         activeIndex,
         errorIndex,
         disabledKeys,
-        isGameComplete
+        isGameComplete,
+        revealRandomCell
     };
 }
 

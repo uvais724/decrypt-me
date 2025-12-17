@@ -1,5 +1,4 @@
-import { useState } from "react";
-
+// components/Keyboard.jsx
 export default function Keyboard({ onKey, disabledKeys }) {
   const keys = "QWERTYUIOPASDFGHJKLZXCVBNM".split("");
 
