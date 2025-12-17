@@ -23,6 +23,7 @@ export function useCryptogramGame(message, initialLives = 3) {
         return index;
     });
 
+    const [errorIndex, setErrorIndex] = useState(null);
 
     const cryptogramMap = useMemo(() => {
         const map = new Map();
@@ -82,6 +83,12 @@ export function useCryptogramGame(message, initialLives = 3) {
                 });
             } else {
                 setLives((l) => l - 1);
+
+                setErrorIndex(index);
+
+                setTimeout(() => {
+                    setErrorIndex(null);
+                }, 500);
             }
         },
         [board, moveToNextIndex]
@@ -104,7 +111,8 @@ export function useCryptogramGame(message, initialLives = 3) {
         lives,
         guessLetter,
         setActiveIndex,
-        activeIndex
+        activeIndex,
+        errorIndex
     };
 }
 

@@ -7,7 +7,7 @@ import Lives from "./components/Lives";
 const MESSAGE = "I FEEL DEEPLY CONNECTED WHEN WE TALK HONESTLY.";
 
 export default function App() {
-  const { board, lives, guessLetter, activeIndex, setActiveIndex } = useCryptogramGame(MESSAGE);
+  const { board, lives, guessLetter, activeIndex, setActiveIndex, errorIndex } = useCryptogramGame(MESSAGE);
 
   if (lives === 0) {
     return <h1 className="text-center text-3xl">Game Over</h1>;
@@ -16,7 +16,7 @@ export default function App() {
   return (
     <div className="container mx-auto p-10">
       <Lives lives={lives} />
-      <Board board={board} onGuess={guessLetter} activeIndex={activeIndex} setActiveIndex={setActiveIndex} />
+      <Board board={board} onGuess={guessLetter} activeIndex={activeIndex} setActiveIndex={setActiveIndex} errorIndex={errorIndex} />
       <Keyboard onKey={(char) => guessLetter(activeIndex, char)} />
     </div>
   );
