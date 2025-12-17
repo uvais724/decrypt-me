@@ -1,4 +1,6 @@
-export default function Keyboard({ onKey }) {
+import { useState } from "react";
+
+export default function Keyboard({ onKey, disabledKeys }) {
   const keys = "QWERTYUIOPASDFGHJKLZXCVBNM".split("");
 
   return (
@@ -7,7 +9,8 @@ export default function Keyboard({ onKey }) {
         <button
           key={k}
           onClick={() => onKey(k)}
-          className="border px-4 py-2 rounded"
+          className={`border px-4 py-2 rounded ${disabledKeys.has(k) ? 'border-gray-200 text-gray-400' : ''} `}
+          disabled={disabledKeys.has(k)}
         >
           {k}
         </button>

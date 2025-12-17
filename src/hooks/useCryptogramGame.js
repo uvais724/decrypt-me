@@ -42,6 +42,31 @@ export function useCryptogramGame(message, initialLives = 3) {
         return map;
     }, [chars]);
 
+    const letterToIndices = useMemo(() => {
+        const map = {};
+
+        chars.forEach((char, index) => {
+            if (/[A-Z]/.test(char)) {
+                if (!map[char]) map[char] = [];
+                map[char].push(index);
+            }
+        });
+
+        return map;
+    }, [chars]);
+
+    const disabledKeys = useMemo(() => {
+        const revealedSet = new Set(revealedIndices);
+        const disabled = new Set();
+    
+        Object.entries(letterToIndices).forEach(([letter, indices]) => {
+            const allRevealed = indices.every((i) => revealedSet.has(i));
+            if (allRevealed) disabled.add(letter);
+        });
+        return disabled;
+    }, [letterToIndices, revealedIndices]);
+
+
     const board = useMemo(() => {
         return chars.map((char, index) => ({
             index,
@@ -97,13 +122,13 @@ export function useCryptogramGame(message, initialLives = 3) {
 
     useEffect(() => {
         const handleKeyDown = (e) => {
-            if (!/^[a-zA-Z]$/.test(e.key)) return;
-            guessLetter(activeIndex, e.key.toUpperCase());
+            const letter = e.key.toUpperCase();
+            if (!/[A-Z]/.test(letter)) return;
+            if (disabledKeys.has(letter)) return
         };
-
         window.addEventListener("keydown", handleKeyDown);
         return () => window.removeEventListener("keydown", handleKeyDown);
-    }, [guessLetter, activeIndex]);
+    }, [guessLetter, disabledKeys, activeIndex]);
 
 
     return {
@@ -112,7 +137,8 @@ export function useCryptogramGame(message, initialLives = 3) {
         guessLetter,
         setActiveIndex,
         activeIndex,
-        errorIndex
+        errorIndex,
+        disabledKeys
     };
 }
 
