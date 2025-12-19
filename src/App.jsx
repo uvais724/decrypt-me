@@ -45,7 +45,7 @@ export default function App() {
 
       {/* Middle section - expands to push content down */}
       <div className="grow overflow-auto">
-        <div className="flex gap-4 justify-between mt-4 mx-8">
+        <div className="flex gap-4 justify-center mt-4">
           <span></span>
           <button className={`border p-2 rounded-lg ${!canUseHint ? 'border-gray-200 text-gray-400' : ''}`} onClick={useHint}>
             Hint
