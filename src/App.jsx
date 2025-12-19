@@ -34,7 +34,7 @@ export default function App() {
 
 
   return (
-    <div className="container mx-auto p-10">
+    <div className="container mx-auto p-10 max-sm:px-0">
       <Lives lives={lives} />
       <Board board={board} onGuess={guessLetter} activeIndex={activeIndex} setActiveIndex={setActiveIndex} errorIndex={errorIndex} />
       <Keyboard onKey={(char) => guessLetter(activeIndex, char)} disabledKeys={disabledKeys} />
