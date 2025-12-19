@@ -34,11 +34,31 @@ export default function App() {
 
 
   return (
-    <div className="container mx-auto p-10 max-sm:px-0">
-      <Lives lives={lives} />
-      <Board board={board} onGuess={guessLetter} activeIndex={activeIndex} setActiveIndex={setActiveIndex} errorIndex={errorIndex} />
-      <Keyboard onKey={(char) => guessLetter(activeIndex, char)} disabledKeys={disabledKeys} />
-      <div className="flex gap-4 justify-center mt-4"><button className="border p-2 rounded-lg" onClick={useHint}>Reveal Cell</button></div>
+    <div className="flex flex-col h-screen">
+      {/* Top section with Board and Lives */}
+      <div className="shrink-0">
+        <div className="container mx-auto p-10 max-sm:px-0">
+          <Lives lives={lives} />
+          <Board board={board} onGuess={guessLetter} activeIndex={activeIndex} setActiveIndex={setActiveIndex} errorIndex={errorIndex} />
+        </div>
+      </div>
+
+      {/* Middle section - expands to push content down */}
+      <div className="grow overflow-auto">
+        <div className="flex gap-4 justify-between mt-4 mx-8">
+          <span></span>
+          <button className={`border p-2 rounded-lg ${!canUseHint ? 'border-gray-200 text-gray-400' : ''}`} onClick={useHint}>
+            Hint
+          </button>
+        </div>
+      </div>
+
+      {/* Bottom section with Keyboard and buttons */}
+      <div className="shrink-0 bg-white">
+        <div className="container mx-auto p-4 max-sm:px-2">
+          <Keyboard onKey={(char) => guessLetter(activeIndex, char)} disabledKeys={disabledKeys} />
+        </div>
+      </div>
     </div>
   );
 }

@@ -3,17 +3,6 @@ import Cell from "./Cell";
 
 export default function Board({ board, onGuess, activeIndex, setActiveIndex, errorIndex }) {
   return (
-    // <div className="flex justify-center items-end flex-wrap my-5">
-    //   {board.map((cell, index) =>
-    //     cell.letter === " " || !/[A-Z]/.test(cell.letter) ? (
-    //       <span key={index} className="text-4xl px-4">
-    //         {cell.letter}
-    //       </span>
-    //     ) : (
-    //       <Cell key={`cell-${index}`} cell={cell} isActive={index === activeIndex} onGuess={onGuess} onFocus={() => setActiveIndex(cell.index)} isError={index === errorIndex} />
-    //     )
-    //   )}
-    // </div>
     <div className="flex flex-col items-center my-5">
       {(() => {
         // Group cells by words (words are separated by spaces or non-letters)
