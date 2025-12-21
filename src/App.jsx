@@ -5,6 +5,7 @@ import Board from "./components/Board";
 import Keyboard from "./components/Keyboard";
 import Lives from "./components/Lives";
 import { useState } from "react";
+import Modal from "./components/Modal";
 
 const MESSAGE = "I FEEL DEEPLY CONNECTED WHEN WE TALK HONESTLY.";
 
@@ -16,13 +17,14 @@ export default function App() {
 
   const canUseHint = hintsUsed < MAX_HINTS;
 
-
   if (lives === 0) {
-    return <h1 className="text-center text-3xl">Game Over</h1>;
+    // return <h1 className="text-center text-3xl">Game Over</h1>;
+    return <Modal gameResult="Game Over!"></Modal>
   }
 
   if (isGameComplete) {
-    return <h1 className="text-center text-3xl">You Won!</h1>;
+    // return <h1 className="text-center text-3xl">You Won!</h1>;
+    return <Modal gamePuzzle={MESSAGE} gameResult="You Won!"></Modal>
   }
 
   function useHint() {
@@ -47,7 +49,7 @@ export default function App() {
       <div className="grow overflow-auto">
         <div className="flex gap-4 justify-center mt-4">
           <span></span>
-          <button className={`border p-2 rounded-lg ${!canUseHint ? 'border-gray-200 text-gray-400' : ''}`} onClick={useHint}>
+          <button className={`btn btn-primary ${!canUseHint ? 'border-gray-200 text-gray-400' : ''}`} onClick={useHint}>
             Hint
           </button>
         </div>
