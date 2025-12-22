@@ -16,16 +16,8 @@ export default function App() {
   const [hintsUsed, setHintsUsed] = useState(0);
 
   const canUseHint = hintsUsed < MAX_HINTS;
+  const showModal = lives === 0 || isGameComplete;
 
-  if (lives === 0) {
-    // return <h1 className="text-center text-3xl">Game Over</h1>;
-    return <Modal gameResult="Game Over!"></Modal>
-  }
-
-  if (isGameComplete) {
-    // return <h1 className="text-center text-3xl">You Won!</h1>;
-    return <Modal gamePuzzle={MESSAGE} gameResult="You Won!"></Modal>
-  }
 
   function useHint() {
     if (!canUseHint) return;
@@ -37,30 +29,51 @@ export default function App() {
 
   return (
     <div className="flex flex-col h-screen">
-      {/* Top section with Board and Lives */}
-      <div className="shrink-0">
-        <div className="container mx-auto p-10 max-sm:px-0">
-          <Lives lives={lives} />
-          <Board board={board} onGuess={guessLetter} activeIndex={activeIndex} setActiveIndex={setActiveIndex} errorIndex={errorIndex} />
+      {/* Top section */}
+      <div className="shrink-0 container mx-auto p-10 max-sm:px-0">
+        <Lives lives={lives} />
+
+        {/* 👇 THIS is the important wrapper */}
+        <div className="max-sm:max-h-[40vh] md:max-h-[50vh] overflow-y-auto mt-4">
+          <Board
+            board={board}
+            onGuess={guessLetter}
+            activeIndex={activeIndex}
+            setActiveIndex={setActiveIndex}
+            errorIndex={errorIndex}
+          />
         </div>
       </div>
 
-      {/* Middle section - expands to push content down */}
-      <div className="grow overflow-auto">
-        <div className="flex gap-4 justify-center mt-4">
-          <span></span>
-          <button className={`btn btn-primary ${!canUseHint ? 'border-gray-200 text-gray-400' : ''}`} onClick={useHint}>
-            Hint
-          </button>
-        </div>
+      {/* Middle section */}
+      <div className="shrink-0 flex justify-center mt-4">
+        <button
+          className={`btn btn-primary ${!canUseHint ? 'opacity-50 cursor-not-allowed' : ''}`}
+          onClick={useHint}
+          disabled={!canUseHint}
+        >
+          Hint
+        </button>
       </div>
 
-      {/* Bottom section with Keyboard and buttons */}
-      <div className="shrink-0 bg-white">
+      {/* Bottom section */}
+      <div className="mt-auto bg-white">
         <div className="container mx-auto p-4 max-sm:px-2">
-          <Keyboard onKey={(char) => guessLetter(activeIndex, char)} disabledKeys={disabledKeys} />
+          <Keyboard
+            onKey={(char) => guessLetter(activeIndex, char)}
+            disabledKeys={disabledKeys}
+          />
         </div>
       </div>
+
+      {/* 👇 Modal overlay */}
+      {showModal && (
+        <Modal
+          gameResult={lives === 0 ? "Game Over!" : "You Won!"}
+          gamePuzzle={isGameComplete ? MESSAGE : undefined}
+        />
+      )}
     </div>
+
   );
 }
