@@ -1,16 +1,13 @@
-import './Game.css'
+import './GameEngine.css'
 import { useCryptogramGame } from "../hooks/useCryptogramGame";
 import Board from "./Board";
 import Keyboard from "./Keyboard";
 import Lives from "./Lives";
 import Modal from "./Modal";
-import { Oval } from 'react-loader-spinner';
-import { useState, useEffect } from 'react';
-import { useLocation } from 'react-router-dom'
+import { useState} from 'react';
 
-export default function Game() {
-    const location = useLocation();
-    const message = location.state?.message.toUpperCase();
+
+export default function GameEngine({message}) {
 
     const { board, lives, guessLetter, activeIndex, setActiveIndex, errorIndex, disabledKeys, isGameComplete, revealRandomCell } = useCryptogramGame(message);
 

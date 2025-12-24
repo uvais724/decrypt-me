@@ -1,7 +1,7 @@
 // App.jsx
 
 import GameList from "./components/GameList";
-import Game from "./components/Game";
+import Game from "./pages/Game";
 import { BrowserRouter,  Routes, Route } from 'react-router-dom';
 
 export default function App() {
