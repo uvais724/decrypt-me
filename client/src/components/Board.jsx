@@ -71,7 +71,7 @@ export default function Board({ board, onGuess, activeIndex, setActiveIndex, err
               <div key={`group-${lineIndex}-${groupIndex}`} className="flex items-end">
                 {group.map(({ cell, index: cellIndex }) => (
                   cell.letter === " " || !/[A-Z]/.test(cell.letter) ? (
-                    <span key={cellIndex} className="text-4xl px-1">
+                    <span key={cellIndex} className="text-4xl px-1 mb-4">
                       {cell.letter}
                     </span>
                   ) : (

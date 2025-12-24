@@ -78,6 +78,22 @@ export function useCryptogramGame(message, initialLives = 3) {
     }, [chars, cryptogramMap, guesses, revealedIndices]);
 
 
+    const partiallyRevealedKeys = useMemo(() => {
+        const revealedSet = new Set(revealedIndices);
+        const partial = new Set();
+
+        Object.entries(letterToIndices).forEach(([letter, indices]) => {
+            const revealedCount = indices.filter(i => revealedSet.has(i)).length;
+
+            if (revealedCount > 0 && revealedCount < indices.length) {
+                partial.add(letter);
+            }
+        });
+
+        return partial;
+    }, [letterToIndices, revealedIndices]);
+
+
     const moveToNextIndex = useCallback(
         (currentIndex, revealed) => {
             const length = chars.length;
@@ -170,7 +186,8 @@ export function useCryptogramGame(message, initialLives = 3) {
         errorIndex,
         disabledKeys,
         isGameComplete,
-        revealRandomCell
+        revealRandomCell,
+        partiallyRevealedKeys
     };
 }
 

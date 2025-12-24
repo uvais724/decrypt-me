@@ -1,17 +1,20 @@
 // components/Keyboard.jsx
 import React from "react";
 
-export default function Keyboard({ onKey, disabledKeys }) {
+export default function Keyboard({ onKey, disabledKeys, partiallyRevealedKeys }) {
   const keys = "QWERTYUIOPASDFGHJKLZXCVBNM".split("");
 
   return (
     <div className="flex flex-wrap justify-center gap-2">
       {keys.map((k) => (
-        <React.Fragment  key={k}>
+        <React.Fragment key={k}>
           <button
             key={k}
             onClick={() => onKey(k)}
-            className={`border px-4 py-2 max-sm:px-2 rounded ${disabledKeys.has(k) ? 'border-gray-200 text-gray-400' : ''} `}
+            className={`border px-4 py-2 max-sm:px-2 rounded ${disabledKeys.has(k) ? 'border-gray-200 text-gray-400' : ''} ${partiallyRevealedKeys.has(k)
+                ? "bg-green-100 border-green-500 text-green-700"
+                : ""
+              }`}
             disabled={disabledKeys.has(k)}
           >
             {k}

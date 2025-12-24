@@ -9,7 +9,7 @@ import { useState} from 'react';
 
 export default function GameEngine({message}) {
 
-    const { board, lives, guessLetter, activeIndex, setActiveIndex, errorIndex, disabledKeys, isGameComplete, revealRandomCell } = useCryptogramGame(message);
+    const { board, lives, guessLetter, activeIndex, setActiveIndex, errorIndex, disabledKeys, isGameComplete, revealRandomCell, partiallyRevealedKeys } = useCryptogramGame(message);
 
     const MAX_HINTS = 3;
     const [hintsUsed, setHintsUsed] = useState(0);
@@ -60,6 +60,7 @@ export default function GameEngine({message}) {
                     <Keyboard
                         onKey={(char) => guessLetter(activeIndex, char)}
                         disabledKeys={disabledKeys}
+                        partiallyRevealedKeys={partiallyRevealedKeys}
                     />
                 </div>
             </div>
@@ -68,7 +69,7 @@ export default function GameEngine({message}) {
             {showModal && (
                 <Modal
                     gameResult={lives === 0 ? "Game Over!" : "You Won!"}
-                    gamePuzzle={isGameComplete ? MESSAGE : undefined}
+                    gamePuzzle={isGameComplete ? message : undefined}
                 />
             )}
         </div>
