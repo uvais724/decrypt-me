@@ -1,12 +1,13 @@
-import { useState,useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import GameEngine from '../components/GameEngine';
 import { useLocation } from 'react-router-dom';
 
 export default function Game() {
     const location = useLocation();
     const gameIdFromState = location.state?.gameId;
-
-    const [message, setMessage] = useState(null);
+    const [session, setSession] = useState(undefined);
+    const [loading, setLoading] = useState(true);
+    const [message, setMessage] = useState("");
 
     useEffect(() => {
         // Fetch game data by ID when component mounts
@@ -23,9 +24,28 @@ export default function Game() {
         fetchGame();
     }, [])
 
-    if (!message) return <div>Loading...</div>;
+    useEffect(() => {
+        async function loadSession() {
+            try {
+            const res = await fetch(`/api/game/session/${gameIdFromState}`);
+            const data = await res.json();
+            if (data) {
+                setSession(data);
+            }
+            setLoading(false);
+            } catch (error) {
+                console.error("Error loading session:", error);
+                await setLoading(false);
+            }
+        }
+
+        loadSession();
+    }, [gameIdFromState]);
+
+
+    if (loading || !message) return <div>Loading...</div>;
 
     return (
-        <GameEngine gameId={gameIdFromState} message={message} />
+        <GameEngine gameId={gameIdFromState} message={message} session={session} />
     )
 }

@@ -4,10 +4,10 @@ import Board from "./Board";
 import Keyboard from "./Keyboard";
 import Lives from "./Lives";
 import Modal from "./Modal";
-import { useState } from 'react';
+import { use, useEffect, useState } from 'react';
 
 
-export default function GameEngine({gameId, message}) {
+export default function GameEngine({ gameId, message, session }) {
     const [sessionKey, setSessionKey] = useState(0);
 
     function handleTryAgain() {
@@ -17,13 +17,33 @@ export default function GameEngine({gameId, message}) {
 
     return (
         // key on GameSession forces a full remount when changed
-        <GameSession key={sessionKey} gameId={gameId} message={message} onTryAgain={handleTryAgain} />
+        <GameSession key={sessionKey} gameId={gameId} message={message} onTryAgain={handleTryAgain} session={session} />
     );
 }
 
-function GameSession({gameId, message, onTryAgain}) {
+function GameSession({ gameId, message, onTryAgain, session }) {
+    const persistSession = async (state) => {
+        state.message = message;
+        console.log('Persisting session for gameId:', gameId, 'with state:', state);
+        if (!session) {
+            await fetch('/api/game/session', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ gameId, ...state })
+            });
+        } else {
+            await fetch(`/api/game/session/${session.session_id}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(state)
+            });
+        }
+    };
 
-    const { board, lives, hintsUsed, guessLetter, activeIndex, setActiveIndex, errorIndex, disabledKeys, isGameComplete, revealRandomCell, partiallyRevealedKeys } = useCryptogramGame(message);
+    const { board, lives, hintsUsed, guessLetter, activeIndex, setActiveIndex, errorIndex, disabledKeys, isGameComplete, revealRandomCell, partiallyRevealedKeys } = useCryptogramGame(message, {
+        initialState: session,
+        onPersist: persistSession
+    });
 
     const MAX_HINTS = 3;
     const canUseHint = hintsUsed < MAX_HINTS;

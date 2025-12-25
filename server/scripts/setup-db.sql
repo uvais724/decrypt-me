@@ -18,3 +18,22 @@ CREATE TABLE Games (
     started_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     solved_at TIMESTAMP NULL
 );
+
+-- Create Game Sessions
+CREATE TABLE game_sessions (
+    session_id      INTEGER PRIMARY KEY,
+    game_id         INT NOT NULL REFERENCES Games(game_id) ON DELETE CASCADE,
+    user_id         INTEGER NOT NULL,
+    message         TEXT NOT NULL,
+    cryptogram_map  JSONB NOT NULL,
+    revealed_indices JSONB NOT NULL,
+    guesses         JSONB NOT NULL,
+    active_index    INTEGER NOT NULL,
+    lives           INTEGER NOT NULL CHECK (lives >= 0),
+    hints_used      INTEGER NOT NULL DEFAULT 0,
+    status          VARCHAR(20) NOT NULL CHECK (
+        status IN ('IN_PROGRESS', 'SOLVED', 'GAVE UP')
+    ),
+    created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
