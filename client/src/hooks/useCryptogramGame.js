@@ -14,7 +14,7 @@ export function useCryptogramGame(
     const chars = useMemo(() => message.split(""), [message]);
 
     /* ------------------ CORE STATE ------------------ */
-    const [lives, setLives] = useState(initialState?.livesLeft ?? initialLives);
+    const [lives, setLives] = useState(initialState?.lives ?? initialLives);
     const [guesses, setGuesses] = useState(initialState?.guesses ?? {});
     const [revealedIndices, setRevealedIndices] = useState(() => {
         if (initialState?.revealed_indices) {
@@ -23,14 +23,14 @@ export function useCryptogramGame(
         return pickRandomIndices(chars, 3);
     });
 
-    const [hintsUsed, setHintsUsed] = useState(initialState?.hintsUsed ?? 0);
+    const [hintsUsed, setHintsUsed] = useState(initialState?.hints_used ?? 0);
     const [activeIndex, setActiveIndex] = useState(() => {
-        if (initialState?.activeIndex !== undefined) {
-            return initialState.activeIndex;
+        if (initialState?.active_index !== undefined) {
+            return initialState.active_index;
         }
         return findFirstUnrevealed(
             chars,
-            initialState?.revealedIndices ?? []
+            initialState?.revealed_indices ?? []
         );
     });
 
@@ -216,6 +216,7 @@ export function useCryptogramGame(
     return {
         board,
         lives,
+        hintsUsed,
         guessLetter,
         activeIndex,
         setActiveIndex,
