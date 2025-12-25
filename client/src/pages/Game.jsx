@@ -26,6 +26,6 @@ export default function Game() {
     if (!message) return <div>Loading...</div>;
 
     return (
-        <GameEngine message={message} />
+        <GameEngine gameId={gameIdFromState} message={message} />
     )
 }

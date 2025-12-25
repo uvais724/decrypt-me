@@ -38,3 +38,10 @@ app.get('/api/games', async (req, res) => {
     const queryResult = await client.query('SELECT * FROM games g join prompts p ON g.prompt_id = p.prompt_id WHERE g.status = $1', ['in_progress']);
     res.json(queryResult.rows);
 });
+
+app.put('/api/games/:gameId', async (req, res) => {
+    const gameId = req.params.gameId;
+    const status = req.body.status;
+    const queryResult = await client.query('UPDATE games SET status = $1, solved_at = NOW() WHERE game_id = $2 RETURNING *', [status, gameId]);
+    res.json(queryResult.rows[0]);
+});

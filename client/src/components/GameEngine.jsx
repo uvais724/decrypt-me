@@ -4,10 +4,24 @@ import Board from "./Board";
 import Keyboard from "./Keyboard";
 import Lives from "./Lives";
 import Modal from "./Modal";
-import { useState} from 'react';
+import { useState } from 'react';
 
 
-export default function GameEngine({message}) {
+export default function GameEngine({gameId, message}) {
+    const [sessionKey, setSessionKey] = useState(0);
+
+    function handleTryAgain() {
+        // incrementing the key will remount GameSession and reset all initial state/hooks
+        setSessionKey(k => k + 1);
+    }
+
+    return (
+        // key on GameSession forces a full remount when changed
+        <GameSession key={sessionKey} gameId={gameId} message={message} onTryAgain={handleTryAgain} />
+    );
+}
+
+function GameSession({gameId, message, onTryAgain}) {
 
     const { board, lives, guessLetter, activeIndex, setActiveIndex, errorIndex, disabledKeys, isGameComplete, revealRandomCell, partiallyRevealedKeys } = useCryptogramGame(message);
 
@@ -68,8 +82,10 @@ export default function GameEngine({message}) {
             {/* 👇 Modal overlay */}
             {showModal && (
                 <Modal
+                    gameId={gameId}
                     gameResult={lives === 0 ? "Game Over!" : "You Won!"}
                     gamePuzzle={isGameComplete ? message : undefined}
+                    onTryAgain={onTryAgain}
                 />
             )}
         </div>
