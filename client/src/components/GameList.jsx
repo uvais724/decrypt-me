@@ -27,7 +27,7 @@ export default function GameList() {
                         <div className="card-body">
                             <h2 className="card-title">Game #{game.game_id}</h2>
                             <div className="card-actions justify-end">
-                                <button className="btn btn-sm btn-primary"><Link to={`/${game.game_id}`} state={{gameId: game.game_id}}>Play</Link></button>
+                                <Link to={`/${game.game_id}`} state={{gameId: game.game_id}}><button className="btn btn-sm btn-primary">Play</button></Link>
                             </div>
                         </div>
                     </div>
