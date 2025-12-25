@@ -23,20 +23,15 @@ export default function GameEngine({gameId, message}) {
 
 function GameSession({gameId, message, onTryAgain}) {
 
-    const { board, lives, guessLetter, activeIndex, setActiveIndex, errorIndex, disabledKeys, isGameComplete, revealRandomCell, partiallyRevealedKeys } = useCryptogramGame(message);
+    const { board, lives, hintsUsed, guessLetter, activeIndex, setActiveIndex, errorIndex, disabledKeys, isGameComplete, revealRandomCell, partiallyRevealedKeys } = useCryptogramGame(message);
 
     const MAX_HINTS = 3;
-    const [hintsUsed, setHintsUsed] = useState(0);
-
     const canUseHint = hintsUsed < MAX_HINTS;
     const showModal = lives === 0 || isGameComplete;
 
-
-    function useHint() {
+    const useHint = () => {
         if (!canUseHint) return;
-
         revealRandomCell();
-        setHintsUsed(h => h + 1);
     }
 
     return (

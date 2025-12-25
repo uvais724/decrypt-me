@@ -173,13 +173,15 @@ export function useCryptogramGame(message, initialLives = 3) {
         });
 
         setGuesses(g => ({ ...g, [chosen.index]: chosen.letter }));
-        setHintsUsed(h => ({ ...h, revealCell: h.revealCell + 1 }));
+        setHintsUsed(h => h + 1);
+        console.log('Hints: ', hintsUsed);
     }, [board, moveToNextIndex]);
 
 
     return {
         board,
         lives,
+        hintsUsed,
         guessLetter,
         setActiveIndex,
         activeIndex,
