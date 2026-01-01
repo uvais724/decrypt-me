@@ -3,20 +3,27 @@
 import GameList from "./pages/GameList";
 import Game from "./pages/Game";
 import NewGame from "./pages/NewGame";
-import { BrowserRouter,  Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { AuthProvider } from './context/AuthContext';
+import ProtectedRoute from './router/ProtectedRoute';
+import Login from "./pages/Login";
 
 export default function App() {
 
   return (
-    <BrowserRouter>
-      <Routes>
-        {/* The 'element' prop specifies the component to render when the path matches */}
-        <Route path="/" element={<GameList />} />
-        <Route path="/:gameId" element={<Game />} />
-        <Route path="/new-game" element={<NewGame />} />
-        {/* A catch-all route for 404 pages (optional, placed last) */}
-        <Route path="*" element={<h2>404 Not Found</h2>} />
-      </Routes>
-    </BrowserRouter>
+    <Router>
+      <AuthProvider>
+        <Routes>
+          <Route path="/login" element={<Login />} />
+          
+          {/* Protected Routes */}
+          <Route element={<ProtectedRoute />}>
+            <Route path="/" element={<GameList />} />
+            <Route path="/:gameId" element={<Game />} />
+            <Route path="/new-game" element={<NewGame />} />
+          </Route>
+        </Routes>
+      </AuthProvider>
+    </Router>
   );
-}
+};

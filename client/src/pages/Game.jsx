@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react'
 import GameEngine from '../components/GameEngine';
-import { useLocation } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
+import axios from 'axios';
 
 export default function Game() {
-    const location = useLocation();
-    const gameIdFromState = location.state?.gameId;
+    const { gameId } = useParams();
     const [session, setSession] = useState(undefined);
     const [loading, setLoading] = useState(true);
     const [message, setMessage] = useState("");
@@ -13,8 +13,8 @@ export default function Game() {
         // Fetch game data by ID when component mounts
         const fetchGame = async () => {
             try {
-                const response = await fetch(`/api/games/${gameIdFromState}`);
-                const gameData = await response.json();
+                const response = await axios.get(`/api/games/${gameId}`);
+                const gameData = await response.data;
                 setMessage(gameData.prompt_text.toUpperCase());
             } catch (error) {
                 console.error("Error fetching game data:", error);
@@ -27,8 +27,8 @@ export default function Game() {
     useEffect(() => {
         async function loadSession() {
             try {
-            const res = await fetch(`/api/game/session/${gameIdFromState}`);
-            const data = await res.json();
+            const res = await axios.get(`/api/game/session/${gameId}`);
+            const data = await res.data;
             if (data) {
                 setSession(data);
             }
@@ -40,12 +40,12 @@ export default function Game() {
         }
 
         loadSession();
-    }, [gameIdFromState]);
+    }, [gameId]);
 
 
     if (loading || !message) return <div>Loading...</div>;
 
     return (
-        <GameEngine gameId={gameIdFromState} message={message} session={session} />
+        <GameEngine gameId={gameId} message={message} session={session} />
     )
 }

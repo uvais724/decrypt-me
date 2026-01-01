@@ -1,5 +1,6 @@
 import React from 'react'
 import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
 
 export default function NewGame() {
     const navigate = useNavigate();
@@ -7,14 +8,10 @@ export default function NewGame() {
         e.preventDefault();
         const message = e.target.Message.value;
         try {
-            const response = await fetch('/api/games/new-game', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ promptText: message })
+            const response = await axios.post('/api/games/new-game', {
+                promptText: message
             });
-            const data = await response.json();
+            const data = await response.data;
             console.log(data);
             navigate('/');
         } catch (error) {

@@ -2,12 +2,13 @@
 import express from 'express';
 import morgan from 'morgan';
 import cors from 'cors';
+import jwt from 'jsonwebtoken';
 const app = express();
 
 // Import database client and configuration
 import client from './db/dbConn.js';
 import { PORT } from './config.js';
-import { v7 } from 'uuid';
+import requireAuth from './middlewares/auth-middleware.js';
 
 // Connect to the database and start the server
 client.connect().then(() => {
@@ -27,6 +28,19 @@ app.use(cors());
 // HTTP request logger middleware
 app.use(morgan(':method :url :status :res[content-length] - :response-time ms'));
 
+app.post('/api/login', async (req, res) => {
+  const { username } = req.body;
+  const queryResult = await client.query('SELECT * FROM users WHERE username = $1', [username]);
+  if (queryResult.rows.length === 0) {
+    return res.status(404).json({ error: 'User not found' });
+  }
+  const user = queryResult.rows[0];
+  const token = jwt.sign({ userId: user.user_id, username: user.username }, process.env.SECRET);
+  res.json({ token });
+});
+
+//Middleware to verify auth token
+app.use(requireAuth);
 
 app.get('/api/games/:gameId', async (req, res) => {
   const gameId = req.params.gameId;
@@ -90,10 +104,10 @@ app.patch('/api/game/session/:sessionId', async (req, res) => {
 });
 
 app.post('/api/games/new-game', async (req, res) => {
-  const promtText = req.body.promptText;
+  const promptText = req.body.promptText;
   const promptResult = await client.query(
     'INSERT INTO prompts (sender_id, prompt_text, type, created_at) VALUES ($1, $2, $3, $4) RETURNING *',
-    [1, promtText, 'custom', new Date().toISOString()]
+    [1, promptText, 'custom', new Date().toISOString()]
   );
   //check if the prompt was created
   if (promptResult.rows.length === 0) {
@@ -107,6 +121,7 @@ app.post('/api/games/new-game', async (req, res) => {
   );
 
   if (gameResult.rows.length === 0) {
+    await client.query('DELETE FROM prompts WHERE prompt_id = $1', [promptId]);
     return res.status(500).json({ error: 'Failed to create game' });
   }
 

@@ -1,13 +1,14 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom';
+import axios from 'axios';
 
 export default function GameList() {
     const [gamesList = [], setGamesList] = useState([]);
     useEffect(() => {
         const fetchAllGamesInProgress = async () => {
             try {
-                const response = await fetch('/api/games');
-                const gamesData = await response.json();
+                const response = await axios.get('/api/games');
+                const gamesData = await response.data;
                 console.log(gamesData);
                 setGamesList(gamesData);
             } catch (error) {

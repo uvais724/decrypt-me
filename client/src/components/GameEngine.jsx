@@ -4,7 +4,8 @@ import Board from "./Board";
 import Keyboard from "./Keyboard";
 import Lives from "./Lives";
 import Modal from "./Modal";
-import { use, useEffect, useState } from 'react';
+import axios from 'axios';
+import { useState } from 'react';
 
 
 export default function GameEngine({ gameId, message, session }) {
@@ -26,16 +27,13 @@ function GameSession({ gameId, message, onTryAgain, session }) {
         state.message = message;
         console.log('Persisting session for gameId:', gameId, 'with state:', state);
         if (!session) {
-            await fetch('/api/game/session', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ gameId, ...state })
+            await axios.post('/api/game/session', {
+                gameId,
+                ...state
             });
         } else {
-            await fetch(`/api/game/session/${session.session_id}`, {
-                method: 'PATCH',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(state)
+            await axios.patch(`/api/game/session/${session.session_id}`, {
+                ...state
             });
         }
     };

@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
 
 export default function Modal({ gameId, gamePuzzle, gameResult, onTryAgain }) {
     const dialogRef = useRef(null);
@@ -10,14 +11,10 @@ export default function Modal({ gameId, gamePuzzle, gameResult, onTryAgain }) {
         if(gamePuzzle) {
             const updateGameStatus = async () => {
                 try {
-                    const response = await fetch(`/api/games/${gameId}`, {
-                        method: 'PUT',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({ status: 'solved' })
+                    const response = await axios.put(`/api/games/${gameId}`, {
+                        status: 'solved'
                     });
-                    const data = await response.json();
+                    const data = await response.data;
                     console.log('Game status updated:', data);
                 } catch (error) {
                     console.error('Error updating game status:', error);
