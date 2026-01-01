@@ -88,3 +88,28 @@ app.patch('/api/game/session/:sessionId', async (req, res) => {
   );
   res.json(queryResult.rows[0]);
 });
+
+app.post('/api/games/new-game', async (req, res) => {
+  const promtText = req.body.promptText;
+  const promptResult = await client.query(
+    'INSERT INTO prompts (sender_id, prompt_text, type, created_at) VALUES ($1, $2, $3, $4) RETURNING *',
+    [1, promtText, 'custom', new Date().toISOString()]
+  );
+  //check if the prompt was created
+  if (promptResult.rows.length === 0) {
+    return res.status(500).json({ error: 'Failed to create prompt' });
+  }
+
+  const promptId = promptResult.rows[0].prompt_id;
+  const gameResult = await client.query(
+    'INSERT INTO games (prompt_id, status, difficulty_level) VALUES ($1, $2, $3) RETURNING *',
+    [promptId, 'in_progress', 'medium']
+  );
+
+  if (gameResult.rows.length === 0) {
+    return res.status(500).json({ error: 'Failed to create game' });
+  }
+
+  res.json(`Game: ${gameResult.rows[0].game_id} created successfully`);
+
+});
