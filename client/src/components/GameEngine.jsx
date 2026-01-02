@@ -6,6 +6,7 @@ import Lives from "./Lives";
 import Modal from "./Modal";
 import axios from 'axios';
 import { useState } from 'react';
+import { useAuth } from '../context/AuthContext';
 
 
 export default function GameEngine({ gameId, message, session }) {
@@ -23,12 +24,14 @@ export default function GameEngine({ gameId, message, session }) {
 }
 
 function GameSession({ gameId, message, onTryAgain, session }) {
+    const { user } = useAuth();
     const persistSession = async (state) => {
         state.message = message;
         console.log('Persisting session for gameId:', gameId, 'with state:', state);
         if (!session) {
             await axios.post('/api/game/session', {
                 gameId,
+                userId: user.userId,
                 ...state
             });
         } else {

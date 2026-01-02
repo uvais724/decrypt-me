@@ -45,12 +45,12 @@ app.use(requireAuth);
 app.get('/api/games/:gameId', async (req, res) => {
   const gameId = req.params.gameId;
   const queryResult = await client.query('SELECT p.prompt_text FROM games g join prompts p ON g.prompt_id = p.prompt_id WHERE g.game_id = $1 and status = $2', [gameId, 'in_progress']);
-  console.log(queryResult);
   res.json(queryResult.rows[0]);
 });
 
-app.get('/api/games', async (req, res) => {
-  const queryResult = await client.query('SELECT * FROM games g join prompts p ON g.prompt_id = p.prompt_id WHERE g.status = $1', ['in_progress']);
+app.get('/api/games/list/:userId', async (req, res) => {
+  const userId = req.params.userId;
+  const queryResult = await client.query('SELECT * FROM games g join prompts p ON g.prompt_id = p.prompt_id WHERE g.status = $1 and p.receiver_id = $2', ['in_progress', userId]);
   res.json(queryResult.rows);
 });
 
@@ -70,7 +70,7 @@ app.get('/api/game/session/:gameId', async (req, res) => {
 
 app.post('/api/game/session', async (req, res) => {
   const gameId = req.body.gameId;
-  const userId = 49; // Placeholder user ID
+  const userId = req.body.userId;
   const message = req.body.message;
   const cryptogramMap = JSON.stringify(req.body.cryptogramMap);
   const guesses = JSON.stringify(req.body.guesses);
@@ -105,9 +105,11 @@ app.patch('/api/game/session/:sessionId', async (req, res) => {
 
 app.post('/api/games/new-game', async (req, res) => {
   const promptText = req.body.promptText;
+  const userId = req.body.userId;
+  const recipientId = req.body.recipientId;
   const promptResult = await client.query(
-    'INSERT INTO prompts (sender_id, prompt_text, type, created_at) VALUES ($1, $2, $3, $4) RETURNING *',
-    [1, promptText, 'custom', new Date().toISOString()]
+    'INSERT INTO prompts (sender_id, prompt_text, type, created_at, receiver_id) VALUES ($1, $2, $3, $4, $5) RETURNING *',
+    [userId, promptText, 'custom', new Date().toISOString(), recipientId]
   );
   //check if the prompt was created
   if (promptResult.rows.length === 0) {
@@ -126,5 +128,10 @@ app.post('/api/games/new-game', async (req, res) => {
   }
 
   res.json(`Game: ${gameResult.rows[0].game_id} created successfully`);
+});
 
+app.get('/api/users/related/:userId', async (req, res) => {
+  const userId = req.params.userId;
+  const queryResult = await client.query('SELECT u.user_id, u.username FROM users u JOIN user_relationships r ON u.user_id = r.related_user_id WHERE r.user_id = $1 and r.status = $2', [userId, 'accepted']);
+  res.json(queryResult.rows);
 });
