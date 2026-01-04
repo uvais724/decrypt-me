@@ -5,39 +5,36 @@ import Keyboard from "./Keyboard";
 import Lives from "./Lives";
 import Modal from "./Modal";
 import axios from 'axios';
-import { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 
 
-export default function GameEngine({ gameId, message, session }) {
-    const [sessionKey, setSessionKey] = useState(0);
+export default function GameEngine({ gameId, message, session, setSession, onTryAgain }) {
 
-    function handleTryAgain() {
-        // incrementing the key will remount GameSession and reset all initial state/hooks
-        setSessionKey(k => k + 1);
-    }
-
-    return (
-        // key on GameSession forces a full remount when changed
-        <GameSession key={sessionKey} gameId={gameId} message={message} onTryAgain={handleTryAgain} session={session} />
-    );
-}
-
-function GameSession({ gameId, message, onTryAgain, session }) {
     const { user } = useAuth();
     const persistSession = async (state) => {
         state.message = message;
         console.log('Persisting session for gameId:', gameId, 'with state:', state);
         if (!session) {
-            await axios.post('/api/game/session', {
+            const response = await axios.post('/api/game/session', {
                 gameId,
                 userId: user.userId,
                 ...state
             });
+            const data = await response.data;
+            console.log('New session created:', data);
+            if(data) {
+                setSession(data);
+            }
+            
         } else {
-            await axios.patch(`/api/game/session/${session.session_id}`, {
+            const response = await axios.patch(`/api/game/session/${session.session_id}`, {
                 ...state
             });
+            const data = await response.data;
+            console.log('Session updated:', data);
+            if(data) {
+                setSession(data);
+            }
         }
     };
 

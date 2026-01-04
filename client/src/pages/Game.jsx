@@ -9,6 +9,7 @@ export default function Game() {
     const [session, setSession] = useState(undefined);
     const [loading, setLoading] = useState(true);
     const [message, setMessage] = useState("");
+    const [childKey, setChildKey] = useState(0);
 
     useEffect(() => {
         // Fetch game data by ID when component mounts
@@ -41,15 +42,28 @@ export default function Game() {
         }
 
         loadSession();
-    }, [gameId]);
+    }, []);
 
+
+     async function handleTryAgain() {
+        const deleteSession = async () => {
+            try {
+                await axios.delete(`/api/game/session/${session.session_id}`);
+                setSession(undefined);
+            } catch (error) {
+                console.error("Error deleting session:", error);
+            }
+        };
+        await deleteSession();
+        setChildKey(prevKey => prevKey + 1);
+    }
 
     if (loading || !message) return <div>Loading...</div>;
 
     return (
         <>
             <Navbar />
-            <GameEngine gameId={gameId} message={message} session={session} />
+            <GameEngine key={childKey} gameId={gameId} message={message} session={session} setSession={setSession} onTryAgain={handleTryAgain} />
         </>
     )
 }

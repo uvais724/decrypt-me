@@ -135,3 +135,9 @@ app.get('/api/users/related/:userId', async (req, res) => {
   const queryResult = await client.query('SELECT u.user_id, u.username FROM users u JOIN user_relationships r ON u.user_id = r.related_user_id WHERE r.user_id = $1 and r.status = $2', [userId, 'accepted']);
   res.json(queryResult.rows);
 });
+
+app.delete('/api/game/session/:sessionId', async (req, res) => {
+  const sessionId = req.params.sessionId;
+  await client.query('DELETE FROM game_sessions WHERE session_id = $1', [sessionId]);
+  res.json({ message: 'Game session deleted successfully' });
+});
