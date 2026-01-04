@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import axios from 'axios';
+import Navbar from '../components/Navbar';
 
 export default function NewGame() {
     const { user } = useAuth();

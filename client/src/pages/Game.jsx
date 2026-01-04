@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import GameEngine from '../components/GameEngine';
 import { useParams } from 'react-router-dom';
 import axios from 'axios';
+import Navbar from '../components/Navbar';
 
 export default function Game() {
     const { gameId } = useParams();
@@ -27,12 +28,12 @@ export default function Game() {
     useEffect(() => {
         async function loadSession() {
             try {
-            const res = await axios.get(`/api/game/session/${gameId}`);
-            const data = await res.data;
-            if (data) {
-                setSession(data);
-            }
-            setLoading(false);
+                const res = await axios.get(`/api/game/session/${gameId}`);
+                const data = await res.data;
+                if (data) {
+                    setSession(data);
+                }
+                setLoading(false);
             } catch (error) {
                 console.error("Error loading session:", error);
                 await setLoading(false);
@@ -46,6 +47,9 @@ export default function Game() {
     if (loading || !message) return <div>Loading...</div>;
 
     return (
-        <GameEngine gameId={gameId} message={message} session={session} />
+        <>
+            <Navbar />
+            <GameEngine gameId={gameId} message={message} session={session} />
+        </>
     )
 }
