@@ -85,11 +85,33 @@ CREATE TABLE user_relationships (
         CHECK (user_id <> related_user_id)
 );
 
-
 CREATE UNIQUE INDEX ux_user_relationship_pair
 ON user_relationships (
     LEAST(user_id, related_user_id),
     GREATEST(user_id, related_user_id)
+);
+
+-- Relationship Invite table
+CREATE TABLE relationship_invites (
+    invite_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    
+    inviter_id INT NOT NULL
+        REFERENCES users(user_id)
+        ON DELETE CASCADE,
+
+    invitee_username TEXT NOT NULL,
+
+    relationship_type relationship_type NOT NULL,
+
+    token_hash TEXT NOT NULL UNIQUE,
+
+    status VARCHAR(20) NOT NULL DEFAULT 'PENDING'
+        CHECK (status IN ('PENDING', 'ACCEPTED', 'EXPIRED')),
+
+    expires_at TIMESTAMPTZ NOT NULL,
+
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    accepted_at TIMESTAMPTZ
 );
 
 GRANT ALL PRIVILEGES ON DATABASE decrypt_me TO db_user;

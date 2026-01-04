@@ -3,11 +3,13 @@ import express from 'express';
 import morgan from 'morgan';
 import cors from 'cors';
 import jwt from 'jsonwebtoken';
+import crypto from 'crypto';
+
 const app = express();
 
 // Import database client and configuration
 import client from './db/dbConn.js';
-import { PORT } from './config.js';
+import { PORT, FRONTEND_URL } from './config.js';
 import requireAuth from './middlewares/auth-middleware.js';
 
 // Connect to the database and start the server
@@ -39,7 +41,74 @@ app.post('/api/login', async (req, res) => {
   res.json({ token });
 });
 
-//Middleware to verify auth token
+app.post('/api/invites/accept', async (req, res) => {
+  const token = req.query.token;
+  let userId;
+
+  const tokenHash = crypto
+    .createHash('sha256')
+    .update(token)
+    .digest('hex');
+
+  const { rows } = await client.query(
+    `SELECT * FROM relationship_invites
+     WHERE token_hash = $1
+       AND status = 'PENDING'
+       AND expires_at > NOW()`,
+    [tokenHash]
+  );
+
+  if (!rows.length) {
+    return res.status(400).json({ error: "Invalid or expired invite" });
+  }
+
+  const invite = rows[0];
+  //check if the invitee username exists
+  const inviteeResult = await client.query(
+    `SELECT * FROM users WHERE username = $1`,
+    [invite.invitee_username]
+  );
+
+  if (inviteeResult.rows.length === 0) {
+    //create user if not exists
+    const newUserResult = await client.query(
+      `INSERT INTO users (username) VALUES ($1) RETURNING *`,
+      [invite.invitee_username]
+    );
+    userId = newUserResult.rows[0].user_id;
+  } else {
+    userId = inviteeResult.rows[0].user_id;
+  }
+
+  // Create relationship
+  await client.query(
+    `INSERT INTO user_relationships
+     (user_id, related_user_id, relationship_type, status, initiated_by)
+     VALUES ($1, $2, $3, 'accepted', $4),
+     ($2, $1, $3, 'accepted', $1)
+     ON CONFLICT DO NOTHING
+     RETURNING relationship_id`,
+    [
+      invite.inviter_id,
+      userId,
+      invite.relationship_type,
+      invite.inviter_id
+    ]
+  );
+
+  // Mark invite accepted
+  await client.query(
+    `UPDATE relationship_invites
+     SET status = 'ACCEPTED', accepted_at = NOW()
+     WHERE invite_id = $1`,
+    [invite.invite_id]
+  );
+
+  res.json({ success: true });
+});
+
+
+// Middleware to verify auth token
 app.use(requireAuth);
 
 app.get('/api/games/:gameId', async (req, res) => {
@@ -141,3 +210,27 @@ app.delete('/api/game/session/:sessionId', async (req, res) => {
   await client.query('DELETE FROM game_sessions WHERE session_id = $1', [sessionId]);
   res.json({ message: 'Game session deleted successfully' });
 });
+
+//invite api
+app.post('/api/invites/send', async (req, res) => {
+  const { userId, inviteeUsername, relationshipType } = req.body;
+  //const inviteId = uuidv4();
+
+  const token = crypto.randomBytes(32).toString('hex');
+  const tokenHash = crypto
+    .createHash('sha256')
+    .update(token)
+    .digest('hex');
+
+  const expiresAt = new Date(Date.now() + 1000 * 60 * 60 * 24); // 24h
+
+  await client.query(
+    `INSERT INTO relationship_invites
+     (inviter_id, invitee_username, relationship_type, token_hash, expires_at)
+     VALUES ($1, $2, $3, $4, $5)`,
+    [userId, inviteeUsername, relationshipType, tokenHash, expiresAt]
+  );
+  const magicLink = `${FRONTEND_URL}/invite/accept?token=${token}`;
+  res.json({ magicLink });
+});
+

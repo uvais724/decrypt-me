@@ -12,3 +12,5 @@ export const DB_NAME = process.env.DB_NAME;       // Database name
 export const PORT = process.env.PORT;             // Server listening port
 
 export const SECRET = process.env.SECRET;       // Secret key for JWT
+
+export const FRONTEND_URL = process.env.FRONTEND_URL; // Frontend application URL
