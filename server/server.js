@@ -119,7 +119,7 @@ app.get('/api/games/:gameId', async (req, res) => {
 
 app.get('/api/games/list/:userId', async (req, res) => {
   const userId = req.params.userId;
-  const queryResult = await client.query('SELECT * FROM games g join prompts p ON g.prompt_id = p.prompt_id WHERE g.status = $1 and p.receiver_id = $2', ['in_progress', userId]);
+  const queryResult = await client.query('SELECT g.game_id, g.lives_left, g.hints_used, g.difficulty_level, p.prompt_text, u.username, s.revealed_indices FROM games g join prompts p ON g.prompt_id = p.prompt_id join users u on u.user_id = p.sender_id join game_sessions s on s.game_id = g.game_id WHERE g.status = $1 and p.receiver_id = $2', ['in_progress', userId]);
   res.json(queryResult.rows);
 });
 
@@ -176,6 +176,19 @@ app.post('/api/games/new-game', async (req, res) => {
   const promptText = req.body.promptText;
   const userId = req.body.userId;
   const recipientId = req.body.recipientId;
+
+  //check if 5 games in progress exist for this user with the same sender and receiver
+  const existingGamesResult = await client.query(
+    `SELECT COUNT(*) FROM games g
+    JOIN prompts p ON g.prompt_id = p.prompt_id
+    WHERE g.status = 'in_progress' AND p.sender_id = $1`,
+    [userId]
+  );
+
+  if (existingGamesResult.rows[0].count > 5) {
+    return res.status(400).json({ error: 'Maximum number of games in progress reached' });
+  }
+
   const promptResult = await client.query(
     'INSERT INTO prompts (sender_id, prompt_text, type, created_at, receiver_id) VALUES ($1, $2, $3, $4, $5) RETURNING *',
     [userId, promptText, 'custom', new Date().toISOString(), recipientId]
@@ -186,9 +199,11 @@ app.post('/api/games/new-game', async (req, res) => {
   }
 
   const promptId = promptResult.rows[0].prompt_id;
+  const difficulty_level = setDifficultyLevel(promptText);
+
   const gameResult = await client.query(
     'INSERT INTO games (prompt_id, status, difficulty_level) VALUES ($1, $2, $3) RETURNING *',
-    [promptId, 'in_progress', 'medium']
+    [promptId, 'in_progress', difficulty_level]
   );
 
   if (gameResult.rows.length === 0) {
@@ -234,3 +249,10 @@ app.post('/api/invites/send', async (req, res) => {
   res.json({ magicLink });
 });
 
+function setDifficultyLevel(promptText) {
+  //calculate word count by only counting letters A-Z
+  const wordCount = promptText.match(/[a-zA-Z]/g)?.length || 0;
+  if (wordCount < 50) return 'easy';
+  if (wordCount <= 100) return 'medium';
+  return 'hard';
+}
