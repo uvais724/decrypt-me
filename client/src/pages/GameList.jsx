@@ -40,8 +40,8 @@ export default function GameList() {
             <div className="container mx-auto p-6">
                 <div className="flex items-center justify-between mb-6">
                     <h1 className="text-3xl font-extrabold">Games In Progress</h1>
-                    <Link to="/new-game">
-                        <button className="btn btn-primary btn-sm">
+                    <Link className="btn btn-primary btn-sm" to="/new-game">
+                        <button>
                             Start New Game
                         </button>
                     </Link>
