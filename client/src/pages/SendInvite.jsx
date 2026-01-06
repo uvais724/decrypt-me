@@ -2,6 +2,7 @@ import React from 'react'
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
 import Navbar from '../components/Navbar';
+import { Link } from 'react-router-dom';
 
 export default function SendInvite() {
     const [username, setUsername] = React.useState('');
@@ -85,6 +86,7 @@ export default function SendInvite() {
                             >
                                 Reset
                             </button>
+                            <Link to="/" className="btn btn-error"><button>Cancel</button></Link>
                         </div>
 
                         <div className="mt-4">

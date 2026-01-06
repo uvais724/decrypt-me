@@ -53,7 +53,8 @@ export default function NewGame() {
                     <div className="card-body">
                         <h2 className="card-title">Start New Game</h2>
                         <p className="text-sm text-neutral">Enter a prompt to generate the game challenge.</p>
-
+                        <p className="text-sm text-neutral">No Friends ? Click on below invite button</p>
+                        <button type="button" className="btn btn-primary" onClick={() => navigate('/send-invite')}>Invite</button>
                         <form onSubmit={onsubmit} className="form-control mt-4">
                             <label htmlFor="User" className="label">
                                 <span className="label-text">Send to</span>
