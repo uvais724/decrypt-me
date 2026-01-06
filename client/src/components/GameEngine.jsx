@@ -58,7 +58,7 @@ export default function GameEngine({ gameId, message, session, setSession, onTry
             <div className='card bg-white shadow-lg w-full max-w-2xl'>
                 <div className='card-body max-h-[50vh]'>
                     {/* <h2 className='card-title text-2xl font-bold text-center mb-4'>Cryptogram</h2> */}
-                    <div className=' bg-gray-50 p-4 h-auto overflow-y-auto border border-gray-200'>
+                    <div className=' bg-gray-50 h-auto overflow-y-auto overflow-x-auto border border-gray-200'>
                         <Board
                             board={board}
                             onGuess={guessLetter}
