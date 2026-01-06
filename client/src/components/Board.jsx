@@ -66,7 +66,7 @@ export default function Board({ board, onGuess, activeIndex, setActiveIndex, err
 
         // Render lines
         return lines.map((line, lineIndex) => (
-          <div key={`line-${lineIndex}`} className="flex justify-center items-end mb-2">
+          <div key={`line-${lineIndex}`} className="flex justify-center-safe items-end mb-2 whitespace-nowrap w-full">
             {line.map((group, groupIndex) => (
               <div key={`group-${lineIndex}-${groupIndex}`} className="flex items-end">
                 {group.map(({ cell, index: cellIndex }) => (
