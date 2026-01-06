@@ -55,7 +55,7 @@ export default function GameEngine({ gameId, message, session, setSession, onTry
     return (
         <div className='h-screen bg-linear-to-br from-blue-50 to-indigo-100 flex flex-col items-center justify-center'>
             {/* Game Board */}
-            <div className='card bg-white shadow-lg w-full md:max-w-2xl'>
+            <div className='card bg-white shadow-lg w-full sm:max-w-2xl'>
                 <div className='card-body max-h-[50vh] overflow-x-auto'>
                     {/* <h2 className='card-title text-2xl font-bold text-center mb-4'>Cryptogram</h2> */}
                     <div className=' bg-gray-50 h-auto overflow-y-auto overflow-x-auto border border-gray-200'>
@@ -71,7 +71,7 @@ export default function GameEngine({ gameId, message, session, setSession, onTry
             </div>
 
             {/* Controls */}
-            <div className='card h-[10vh] bg-white shadow-lg w-full max-w-2xl'>
+            <div className='card h-[10vh] bg-white shadow-lg w-full sm:max-w-2xl'>
                 <div className='md:p-6'>
                     <div className='flex flex-wrap justify-center items-center gap-4'>
                         <button className='max-sm:btn-xs btn btn-error btn-lg gap-2'>
@@ -92,7 +92,7 @@ export default function GameEngine({ gameId, message, session, setSession, onTry
             </div>
 
             {/* Keyboard */}
-            <div className='card h-[30vh] bg-white shadow-lg w-full md:max-w-2xl overflow-y-auto'>
+            <div className='card h-[30vh] bg-white shadow-lg w-full sm:max-w-2xl overflow-y-auto'>
                 <div className='md:p-6'>
                     <h3 className='font-bold text-gray-700 mb-2 text-center'>Keyboard</h3>
                     <div className='bg-gray-50 md:p-4 border border-gray-200'>
