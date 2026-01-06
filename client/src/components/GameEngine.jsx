@@ -109,6 +109,7 @@ export default function GameEngine({ gameId, message, session, setSession, onTry
             {showModal && (
                 <Modal
                     gameId={gameId}
+                    sessionId={session.sessionId}
                     gameResult={lives === 0 ? "Game Over!" : "You Won!"}
                     gamePuzzle={isGameComplete ? message : undefined}
                     onTryAgain={onTryAgain}

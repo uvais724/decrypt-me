@@ -2,7 +2,7 @@ import React, { useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 
-export default function Modal({ gameId, gamePuzzle, gameResult, onTryAgain }) {
+export default function Modal({ gameId, sessionId, gamePuzzle, gameResult, onTryAgain }) {
     const dialogRef = useRef(null);
     const navigate = useNavigate();
 
@@ -24,7 +24,16 @@ export default function Modal({ gameId, gamePuzzle, gameResult, onTryAgain }) {
         }
     }, []);
 
-    const handleClose = () => {
+    const handleClose = async () => {
+         const deleteSession = async () => {
+            try {
+                await axios.delete(`/api/game/session/${session_id}`);
+                setSession(undefined);
+            } catch (error) {
+                console.error("Error deleting session:", error);
+            }
+        };
+        await deleteSession();
         dialogRef.current?.close();
         navigate('/');
     };

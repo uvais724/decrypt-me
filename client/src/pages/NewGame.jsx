@@ -85,7 +85,7 @@ export default function NewGame() {
                                 id="Message"
                                 type="text"
                                 placeholder="Type your prompt..."
-                                className="textarea w-full"
+                                className="textarea w-full h-[30vh]"
                                 required
                             />
 

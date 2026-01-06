@@ -171,6 +171,14 @@ export function useCryptogramGame(
 
         setGuesses(g => ({ ...g, [chosen.index]: chosen.letter }));
         setHintsUsed(h => h + 1);
+        
+        const revealedChars = board.filter(
+            c => ALPHABET_REGEX.test(c.letter) && c.revealed
+        );
+        const messageChars = message.split('').filter(c => ALPHABET_REGEX.test(c))
+        if(revealedChars.length === messageChars.length - 1) {
+            setIsGameComplete(true);
+        }
     }, [board, moveToNextIndex]);
 
     /* ------------------ PERSISTENCE ------------------ */

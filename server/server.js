@@ -137,7 +137,7 @@ app.get('/api/games/list/:userId', async (req, res) => {
 FROM games g  
 JOIN prompts p ON g.prompt_id = p.prompt_id  
 JOIN users u ON u.user_id = p.sender_id
-JOIN game_sessions s ON s.game_id = g.game_id
+LEFT JOIN game_sessions s ON s.game_id = g.game_id
 WHERE g.status = $1 AND p.receiver_id = $2`, ['in_progress', userId]);
   res.json(queryResult.rows);
 });
