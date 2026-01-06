@@ -119,7 +119,26 @@ app.get('/api/games/:gameId', async (req, res) => {
 
 app.get('/api/games/list/:userId', async (req, res) => {
   const userId = req.params.userId;
-  const queryResult = await client.query('SELECT g.game_id, g.lives_left, g.hints_used, g.difficulty_level, p.prompt_text, u.username, s.revealed_indices FROM games g join prompts p ON g.prompt_id = p.prompt_id join users u on u.user_id = p.sender_id join game_sessions s on s.game_id = g.game_id WHERE g.status = $1 and p.receiver_id = $2', ['in_progress', userId]);
+  const queryResult = await client.query(`SELECT g.game_id, 
+    -- Logic for Lives
+    CASE 
+        WHEN s.lives IS NOT NULL AND s.lives != g.lives_left THEN s.lives 
+        ELSE g.lives_left 
+    END AS lives_left,
+    -- Logic for Hints
+    CASE 
+        WHEN s.hints_used IS NOT NULL AND s.hints_used != g.hints_used THEN s.hints_used 
+        ELSE g.hints_used 
+    END AS hints_used,
+    g.difficulty_level, 
+    p.prompt_text, 
+    u.username, 
+    s.revealed_indices  
+FROM games g  
+JOIN prompts p ON g.prompt_id = p.prompt_id  
+JOIN users u ON u.user_id = p.sender_id
+JOIN game_sessions s ON s.game_id = g.game_id
+WHERE g.status = $1 AND p.receiver_id = $2`, ['in_progress', userId]);
   res.json(queryResult.rows);
 });
 
