@@ -22,17 +22,17 @@ export default function GameEngine({ gameId, message, session, setSession, onTry
             });
             const data = await response.data;
             console.log('New session created:', data);
-            if(data) {
+            if (data) {
                 setSession(data);
             }
-            
+
         } else {
             const response = await axios.patch(`/api/game/session/${session.session_id}`, {
                 ...state
             });
             const data = await response.data;
             console.log('Session updated:', data);
-            if(data) {
+            if (data) {
                 setSession(data);
             }
         }
@@ -53,42 +53,56 @@ export default function GameEngine({ gameId, message, session, setSession, onTry
     }
 
     return (
-        <div className="flex flex-col h-screen">
-            {/* Top section */}
-            <div className="shrink-0 container mx-auto p-10 max-sm:px-0">
-                <Lives lives={lives} />
-
-                {/* 👇 THIS is the important wrapper */}
-                <div className="max-sm:max-h-[40vh] md:max-h-[50vh] overflow-y-auto mt-4">
-                    <Board
-                        board={board}
-                        onGuess={guessLetter}
-                        activeIndex={activeIndex}
-                        setActiveIndex={setActiveIndex}
-                        errorIndex={errorIndex}
-                    />
+        <div className='h-screen bg-linear-to-br from-blue-50 to-indigo-100 flex flex-col items-center justify-center'>
+            {/* Game Board */}
+            <div className='card bg-white shadow-lg w-full max-w-2xl'>
+                <div className='card-body max-h-[50vh]'>
+                    {/* <h2 className='card-title text-2xl font-bold text-center mb-4'>Cryptogram</h2> */}
+                    <div className=' bg-gray-50 p-4 h-auto overflow-y-auto border border-gray-200'>
+                        <Board
+                            board={board}
+                            onGuess={guessLetter}
+                            activeIndex={activeIndex}
+                            setActiveIndex={setActiveIndex}
+                            errorIndex={errorIndex}
+                        />
+                    </div>
                 </div>
             </div>
 
-            {/* Middle section */}
-            <div className="shrink-0 flex justify-center mt-4">
-                <button
-                    className={`btn btn-primary ${!canUseHint ? 'opacity-50 cursor-not-allowed' : ''}`}
-                    onClick={useHint}
-                    disabled={!canUseHint}
-                >
-                    Hint
-                </button>
+            {/* Controls */}
+            <div className='card h-[10vh] bg-white shadow-lg w-full max-w-2xl'>
+                <div className='card-body p-6'>
+                    <div className='flex flex-wrap justify-center items-center gap-4'>
+                        <button className='btn btn-error btn-lg gap-2'>
+                            <span>🏳️</span> Give Up!
+                        </button>
+                        <div className='divider divider-horizontal max-sm:hidden'></div>
+                        <Lives lives={lives} />
+                        <div className='divider divider-horizontal max-sm:hidden'></div>
+                        <button 
+                            className='btn btn-info btn-lg gap-2' 
+                            onClick={useHint} 
+                            disabled={!canUseHint}
+                        >
+                            <span>💡</span>
+                            Hint ({MAX_HINTS - hintsUsed} left)
+                        </button>
+                    </div>
+                </div>
             </div>
 
-            {/* Bottom section */}
-            <div className="mt-auto bg-white">
-                <div className="container mx-auto p-4 max-sm:px-2">
-                    <Keyboard
-                        onKey={(char) => guessLetter(activeIndex, char)}
-                        disabledKeys={disabledKeys}
-                        partiallyRevealedKeys={partiallyRevealedKeys}
-                    />
+            {/* Keyboard */}
+            <div className='card h-[30vh] bg-white shadow-lg w-full max-w-2xl overflow-y-auto'>
+                <div className='card-body p-6'>
+                    <h3 className='font-bold text-gray-700 mb-2 text-center'>Keyboard</h3>
+                    <div className='bg-gray-50 p-4 border border-gray-200'>
+                        <Keyboard
+                            onKey={(char) => guessLetter(activeIndex, char)}
+                            disabledKeys={disabledKeys}
+                            partiallyRevealedKeys={partiallyRevealedKeys}
+                        />
+                    </div>
                 </div>
             </div>
 
