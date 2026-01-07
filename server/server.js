@@ -2,8 +2,8 @@
 import express from 'express';
 import morgan from 'morgan';
 import cors from 'cors';
-import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
+import supabase from './db/dbConn.js';
 
 const app = express();
 

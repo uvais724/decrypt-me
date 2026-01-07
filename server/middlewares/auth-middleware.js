@@ -1,5 +1,6 @@
 // middlewares/requireAuth.js
 import jwt from 'jsonwebtoken';
+import { SUPABASE_JWT_SECRET } from '../config.js'; 
 
 const requireAuth = (req, res, next) => {
   const authHeader = req.headers.authorization;
@@ -13,7 +14,7 @@ const requireAuth = (req, res, next) => {
   try {
     const decoded = jwt.verify(
       token,
-      process.env.SUPABASE_JWT_SECRET
+      SUPABASE_JWT_SECRET
     );
 
     // Supabase user id

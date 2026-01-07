@@ -8,4 +8,3 @@ export const SUPABASE_JWT_SECRET = process.env.SUPABASE_JWT_SECRET;
 
 //Server Port
 export const PORT = process.env.PORT;
-
