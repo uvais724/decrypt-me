@@ -1,16 +1,9 @@
-// Import the Client class from the 'pg' (PostgreSQL) library
-import { Client } from 'pg';
+// db/supabaseClient.js
+import { createClient } from '@supabase/supabase-js';
 
-// Import database configuration variables from the config file
-import { DB_HOST, DB_PORT, DB_NAME, DB_USER, DB_PASSWORD } from '../config.js';
+const supabase = createClient(
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_ROLE_KEY // SERVER ONLY
+);
 
-// Create and export a new PostgreSQL client instance using the imported configuration
-const client = new Client({
-  host: DB_HOST,       // Database host address
-  port: DB_PORT,       // Database port number
-  database: DB_NAME,   // Name of the database
-  user: DB_USER,       // Database user
-  password: DB_PASSWORD // Database user's password
-});
-
-export default client;
+export default supabase;
