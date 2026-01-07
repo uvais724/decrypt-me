@@ -166,12 +166,11 @@ app.post('/api/game/session', async (req, res) => {
   const revealedIndices = JSON.stringify(req.body.revealedIndices);
   const hintsUsed = req.body.hintsUsed;
   const livesLeft = req.body.livesLeft;
-  const status = 'IN_PROGRESS';
   const createdAt = new Date().toISOString();
 
   const queryResult = await client.query(
-    'INSERT INTO game_sessions (game_id, user_id, message, cryptogram_map, revealed_indices, guesses, active_index, lives, hints_used, status, created_at) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING *',
-    [gameId, userId, message, cryptogramMap, revealedIndices, guesses, activeIndex, livesLeft, hintsUsed, status, createdAt]
+    'INSERT INTO game_sessions (game_id, user_id, message, cryptogram_map, revealed_indices, guesses, active_index, lives, hints_used, created_at) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING *',
+    [gameId, userId, message, cryptogramMap, revealedIndices, guesses, activeIndex, livesLeft, hintsUsed, createdAt]
   );
   res.json(queryResult.rows[0]);
 });

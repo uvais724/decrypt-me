@@ -1,8 +1,14 @@
+--Create Users table
+CREATE TABLE Users (
+    user_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    username UNIQUE TEXT NOT NULL
+);
+
 -- Create Prompts table
 CREATE TABLE Prompts (
-    prompt_id SERIAL PRIMARY KEY,
-    sender_id INT REFERENCES Users(user_id) ON DELETE CASCADE,
-    receiver_id INT REFERENCES Users(user_id) ON DELETE CASCADE,
+    prompt_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    sender_id UUID REFERENCES Users(user_id) ON DELETE CASCADE,
+    receiver_id UUID REFERENCES Users(user_id) ON DELETE CASCADE,
     prompt_text VARCHAR(200) NOT NULL,
     type VARCHAR(50) NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -10,8 +16,8 @@ CREATE TABLE Prompts (
 
 -- Create Games table
 CREATE TABLE Games (
-    game_id SERIAL PRIMARY KEY,
-    prompt_id INT REFERENCES Prompts(prompt_id) ON DELETE CASCADE,
+    game_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    prompt_id UUID REFERENCES Prompts(prompt_id) ON DELETE CASCADE,
     lives_left INT DEFAULT 3,
     hints_used INT DEFAULT 0,
     difficulty_level VARCHAR(50) NOT NULL,
@@ -22,9 +28,9 @@ CREATE TABLE Games (
 
 -- Create Game Sessions
 CREATE TABLE game_sessions (
-    session_id SERIAL PRIMARY KEY,
-    game_id         INT NOT NULL REFERENCES Games(game_id) ON DELETE CASCADE,
-    user_id         INT REFERENCES Users(user_id) ON DELETE CASCADE,
+    session_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    game_id         UUID NOT NULL REFERENCES Games(game_id) ON DELETE CASCADE,
+    user_id         UUID REFERENCES Users(user_id) ON DELETE CASCADE,
     message         TEXT NOT NULL,
     cryptogram_map  JSONB NOT NULL,
     revealed_indices JSONB NOT NULL,
@@ -32,9 +38,6 @@ CREATE TABLE game_sessions (
     active_index    INTEGER NOT NULL,
     lives           INTEGER NOT NULL CHECK (lives >= 0),
     hints_used      INTEGER NOT NULL DEFAULT 0,
-    status          VARCHAR(20) NOT NULL CHECK (
-        status IN ('IN_PROGRESS', 'SOLVED', 'GAVE UP')
-    ),
     created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
@@ -61,11 +64,11 @@ CREATE TYPE relationship_status AS ENUM (
 CREATE TABLE user_relationships (
     relationship_id SERIAL PRIMARY KEY,
 
-    user_id INT NOT NULL
+    user_id UUID NOT NULL
         REFERENCES users(user_id)
         ON DELETE CASCADE,
 
-    related_user_id INT NOT NULL
+    related_user_id UUID NOT NULL
         REFERENCES users(user_id)
         ON DELETE CASCADE,
 
@@ -73,7 +76,7 @@ CREATE TABLE user_relationships (
 
     status relationship_status DEFAULT 'pending',
 
-    initiated_by INT NOT NULL
+    initiated_by UUID NOT NULL
         REFERENCES users(user_id)
         ON DELETE CASCADE,
 
@@ -95,7 +98,7 @@ ON user_relationships (
 CREATE TABLE relationship_invites (
     invite_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     
-    inviter_id INT NOT NULL
+    inviter_id UUID NOT NULL
         REFERENCES users(user_id)
         ON DELETE CASCADE,
 
