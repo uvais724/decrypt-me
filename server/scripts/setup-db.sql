@@ -1,46 +1,86 @@
+CREATE EXTENSION IF NOT EXISTS "pgcrypto";
+
 --Create Users table
-CREATE TABLE Users (
-    user_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    username UNIQUE TEXT NOT NULL
+CREATE TABLE public.users (
+    user_id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+    username TEXT UNIQUE NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT NOW()
 );
+
+-- Function to populate user
+CREATE OR REPLACE FUNCTION public.handle_new_user()
+RETURNS trigger AS $$
+BEGIN
+  INSERT INTO public.users (user_id, username)
+  VALUES (
+    NEW.id,
+    COALESCE(
+      NEW.raw_user_meta_data->>'username',
+      NEW.email
+    )
+  );
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- 
+CREATE TRIGGER on_auth_user_created
+AFTER INSERT ON auth.users
+FOR EACH ROW
+EXECUTE PROCEDURE public.handle_new_user();
+
 
 -- Create Prompts table
-CREATE TABLE Prompts (
+CREATE TABLE public.prompts (
     prompt_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    sender_id UUID REFERENCES Users(user_id) ON DELETE CASCADE,
-    receiver_id UUID REFERENCES Users(user_id) ON DELETE CASCADE,
+    sender_id UUID NOT NULL
+        REFERENCES public.users(user_id)
+        ON DELETE CASCADE,
+    receiver_id UUID NOT NULL
+        REFERENCES public.users(user_id)
+        ON DELETE CASCADE,
     prompt_text VARCHAR(200) NOT NULL,
     type VARCHAR(50) NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMPTZ DEFAULT NOW()
 );
+
 
 -- Create Games table
-CREATE TABLE Games (
+CREATE TABLE public.games (
     game_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    prompt_id UUID REFERENCES Prompts(prompt_id) ON DELETE CASCADE,
-    lives_left INT DEFAULT 3,
-    hints_used INT DEFAULT 0,
+    prompt_id UUID NOT NULL
+        REFERENCES public.prompts(prompt_id)
+        ON DELETE CASCADE,
+    lives_left INT DEFAULT 3 CHECK (lives_left >= 0),
+    hints_used INT DEFAULT 0 CHECK (hints_used >= 0),
     difficulty_level VARCHAR(50) NOT NULL,
-    status VARCHAR(50) DEFAULT 'in_progress',
-    started_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    solved_at TIMESTAMP NULL
+    status VARCHAR(50) DEFAULT 'IN_PROGRESS'
+        CHECK (status IN ('IN_PROGRESS', 'SOLVED', 'GAVE_UP')),
+    started_at TIMESTAMPTZ DEFAULT NOW(),
+    solved_at TIMESTAMPTZ
 );
 
+
 -- Create Game Sessions
-CREATE TABLE game_sessions (
+CREATE TABLE public.game_sessions (
     session_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    game_id         UUID NOT NULL REFERENCES Games(game_id) ON DELETE CASCADE,
-    user_id         UUID REFERENCES Users(user_id) ON DELETE CASCADE,
-    message         TEXT NOT NULL,
-    cryptogram_map  JSONB NOT NULL,
+    game_id UUID NOT NULL
+        REFERENCES public.games(game_id)
+        ON DELETE CASCADE,
+    user_id UUID NOT NULL
+        REFERENCES public.users(user_id)
+        ON DELETE CASCADE,
+    message TEXT NOT NULL,
+    cryptogram_map JSONB NOT NULL,
     revealed_indices JSONB NOT NULL,
-    guesses         JSONB NOT NULL,
-    active_index    INTEGER NOT NULL,
-    lives           INTEGER NOT NULL CHECK (lives >= 0),
-    hints_used      INTEGER NOT NULL DEFAULT 0,
-    created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    updated_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    guesses JSONB NOT NULL,
+    active_index INTEGER NOT NULL,
+    lives INTEGER NOT NULL CHECK (lives >= 0),
+    hints_used INTEGER NOT NULL DEFAULT 0,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
 );
+
 
 
 -- Enum for relationship type
@@ -61,7 +101,7 @@ CREATE TYPE relationship_status AS ENUM (
 
 
 -- Create User Relationships table
-CREATE TABLE user_relationships (
+CREATE TABLE public.user_relationships (
     relationship_id SERIAL PRIMARY KEY,
 
     user_id UUID NOT NULL
@@ -95,7 +135,7 @@ ON user_relationships (
 );
 
 -- Relationship Invite table
-CREATE TABLE relationship_invites (
+CREATE TABLE public.relationship_invites (
     invite_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     
     inviter_id UUID NOT NULL
@@ -117,6 +157,58 @@ CREATE TABLE relationship_invites (
     accepted_at TIMESTAMPTZ
 );
 
-GRANT ALL PRIVILEGES ON DATABASE decrypt_me TO db_user;
-GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO db_user;
-GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO db_user;
+-- Enabling row level security
+ALTER TABLE public.users ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.prompts ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.games ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.game_sessions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.user_relationships ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.relationship_invites ENABLE ROW LEVEL SECURITY;
+
+-- User policy
+CREATE POLICY "Users can view own profile"
+ON public.users
+FOR SELECT
+USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can update own profile"
+ON public.users
+FOR UPDATE
+USING (auth.uid() = user_id)
+WITH CHECK (auth.uid() = user_id);
+
+-- Prompts policy
+CREATE POLICY "Users can view their prompts"
+ON public.prompts
+FOR SELECT
+USING (
+    auth.uid() = sender_id OR
+    auth.uid() = receiver_id
+);
+
+CREATE POLICY "Users can create prompts"
+ON public.prompts
+FOR INSERT
+WITH CHECK (auth.uid() = sender_id);
+
+-- Relationships policy
+CREATE POLICY "Users can view relationships"
+ON public.user_relationships
+FOR SELECT
+USING (
+    auth.uid() = user_id OR
+    auth.uid() = related_user_id
+);
+
+CREATE POLICY "Users can create relationships"
+ON public.user_relationships
+FOR INSERT
+WITH CHECK (auth.uid() = initiated_by);
+
+
+-- Relationships invite policy
+CREATE POLICY "Inviter can manage invites"
+ON public.relationship_invites
+FOR ALL
+USING (auth.uid() = inviter_id)
+WITH CHECK (auth.uid() = inviter_id);
