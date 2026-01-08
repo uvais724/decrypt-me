@@ -32,7 +32,7 @@ export default function NewGame() {
         e.preventDefault();
         const message = e.target.Message.value;
         try {
-            const response = await apiClient.post('/api/games/new-game', {
+            const response = await apiClient.post('/games/new-game', {
                 promptText: message,
                 userId: user.id,
                 recipientId: selectedUser

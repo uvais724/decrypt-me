@@ -12,7 +12,7 @@ export default function Modal({ gameId, sessionId, gamePuzzle, gameResult, onTry
             const updateGameStatus = async () => {
                 try {
                     const response = await apiClient.put(`/games/${gameId}`, {
-                        status: 'solved'
+                        status: 'SOLVED'
                     });
                     const data = await response.data;
                     console.log('Game status updated:', data);
@@ -27,7 +27,7 @@ export default function Modal({ gameId, sessionId, gamePuzzle, gameResult, onTry
     const handleClose = async () => {
          const deleteSession = async () => {
             try {
-                await apiClient.delete(`/game/session/${session_id}`);
+                await apiClient.delete(`/game/session/${sessionId}`);
                 setSession(undefined);
             } catch (error) {
                 console.error("Error deleting session:", error);

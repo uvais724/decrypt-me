@@ -186,7 +186,6 @@ app.post('/api/game/session', requireAuth, async (req, res) => {
       active_index: activeIndex,
       hints_used: hintsUsed,
       lives: livesLeft,
-      status: 'IN_PROGRESS'
     })
     .select()
     .single();
