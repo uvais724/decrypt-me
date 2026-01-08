@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import axios from 'axios';
+import apiClient from '../lib/apiClient';
 import Navbar from '../components/Navbar';
 
 export default function NewGame() {
@@ -14,7 +14,7 @@ export default function NewGame() {
     useEffect(() => {
         const fetchRelatedUsers = async () => {
             try {
-                const response = await axios.get(`/api/users/related/${user.userId}`);
+                const response = await apiClient.get(`/users/related/${user.id}`);
                 setRelatedUsers(response.data);
                 setLoading(false);
             } catch (error) {
@@ -23,18 +23,18 @@ export default function NewGame() {
             }
         };
 
-        if (user?.userId) {
+        if (user?.id) {
             fetchRelatedUsers();
         }
-    }, [user?.userId]);
+    }, [user?.id]);
 
     const onsubmit = async (e) => {
         e.preventDefault();
         const message = e.target.Message.value;
         try {
-            const response = await axios.post('/api/games/new-game', {
+            const response = await apiClient.post('/api/games/new-game', {
                 promptText: message,
-                userId: user.userId,
+                userId: user.id,
                 recipientId: selectedUser
             });
             const data = await response.data;

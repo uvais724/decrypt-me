@@ -1,28 +1,31 @@
-import { useEffect, useState } from "react";
-import { useSearchParams, useNavigate } from "react-router-dom";
+import { useEffect } from 'react';
+import { useSearchParams, useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 
 export default function AcceptInvite() {
   const [params] = useSearchParams();
   const navigate = useNavigate();
-  const [status, setStatus] = useState("loading");
+  const { user, loading } = useAuth();
+
+  const token = params.get('token');
 
   useEffect(() => {
-    const token = params.get("token");
-    if (!token) return setStatus("invalid");
+    if (!token) {
+      navigate('/invalid-invite' ,{ replace: true });
+      return;
+    }
 
-    fetch(`/api/invites/accept?token=${token}`, {
-      method: "POST",
-      credentials: "include"
-    })
-      .then(res => res.json())
-      .then(() => {
-        setStatus("success");
-        setTimeout(() => navigate("/"), 1500);
-      })
-      .catch(() => setStatus("error"));
-  }, []);
+    if (!loading && !user) {
+      // 🚀 Redirect to login WITH invite token
+      navigate(`/login?inviteToken=${token}`,{ replace: true });
+      return;
+    }
 
-  if (status === "loading") return <p>Accepting invite…</p>;
-  if (status === "success") return <p>Invite accepted 🎉</p>;
-  return <p>Invalid or expired invite</p>;
+    if (!loading && user) {
+      // ✅ User is logged in → accept invite
+      navigate(`/accept-invite/confirm?token=${token}`,{ replace: true });
+    }
+  }, [user, loading]);
+
+  return <p>Checking invite…</p>;
 }

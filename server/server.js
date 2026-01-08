@@ -138,9 +138,8 @@ app.post('/api/games/new-game', requireAuth, async (req, res) => {
 });
 
 
-app.get('/api/games/list', requireAuth, async (req, res) => {
+app.get('/api/games/list/:userId', requireAuth, async (req, res) => {
   const userId = req.user.id;
-
   const { data, error } = await supabase
     .from('games')
     .select(`

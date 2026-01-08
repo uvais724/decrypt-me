@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom';
-import axios from 'axios';
+import apiClient from '../lib/apiClient';
 import { useAuth } from '../context/AuthContext';
 import Navbar from '../components/Navbar';
 
@@ -22,7 +22,7 @@ export default function GameList() {
         if (!user) return;
         const fetchAllGamesInProgress = async () => {
             try {
-                const response = await axios.get(`/api/games/list/${user.userId}`);
+                const response = await apiClient.get(`/games/list/${user.id}`);
                 const gamesData = response.data;
                 console.log(gamesData);
                 setGamesList(gamesData);

@@ -4,7 +4,7 @@ import Board from "./Board";
 import Keyboard from "./Keyboard";
 import Lives from "./Lives";
 import Modal from "./Modal";
-import axios from 'axios';
+import apiClient from '../lib/apiClient';
 import { useAuth } from '../context/AuthContext';
 
 
@@ -15,7 +15,7 @@ export default function GameEngine({ gameId, message, session, setSession, onTry
         state.message = message;
         console.log('Persisting session for gameId:', gameId, 'with state:', state);
         if (!session) {
-            const response = await axios.post('/api/game/session', {
+            const response = await apiClient.post('/game/session', {
                 gameId,
                 userId: user.userId,
                 ...state
@@ -27,7 +27,7 @@ export default function GameEngine({ gameId, message, session, setSession, onTry
             }
 
         } else {
-            const response = await axios.patch(`/api/game/session/${session.session_id}`, {
+            const response = await apiClient.patch(`/game/session/${session.session_id}`, {
                 ...state
             });
             const data = await response.data;

@@ -1,8 +1,8 @@
 // middlewares/requireAuth.js
-import jwt from 'jsonwebtoken';
-import { SUPABASE_JWT_SECRET } from '../config.js'; 
+import supabase from "../db/dbConn.js";
 
-const requireAuth = (req, res, next) => {
+
+const requireAuth = async (req, res, next) => {
   const authHeader = req.headers.authorization;
 
   if (!authHeader) {
@@ -10,21 +10,21 @@ const requireAuth = (req, res, next) => {
   }
 
   const token = authHeader.replace('Bearer ', '');
+  console.log('Auth: token', token);
 
   try {
-    const decoded = jwt.verify(
-      token,
-      SUPABASE_JWT_SECRET
-    );
+     // Verify the token using the admin client
+    const { data: { user }, error } = await supabase.auth.getUser(token); // Verify the JWT
 
-    // Supabase user id
-    req.user = {
-      id: decoded.sub,
-      email: decoded.email
-    };
+    if (error) {
+      throw error;
+    }
 
-    next();
+    // Attach user info to the request object
+    req.user = user;
+    next(); // All good, proceed to the route handler
   } catch (err) {
+    console.log('JWT error: ', err);
     return res.status(401).json({ error: 'Invalid token' });
   }
 };

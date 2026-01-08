@@ -31,7 +31,10 @@ export default function Navbar() {
 
                 <div>
                     {user && (
+                        <>
+                        <span className="mr-4">Welcome, {user.email}</span>
                         <button className="btn btn-primary" onClick={handleLogout}>Logout</button>
+                        </>
                     )}
                 </div>
             </header>

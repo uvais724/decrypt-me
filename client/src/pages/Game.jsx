@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import GameEngine from '../components/GameEngine';
 import { useParams } from 'react-router-dom';
-import axios from 'axios';
+import apiClient from '../lib/apiClient';
 import Navbar from '../components/Navbar';
 
 export default function Game() {
@@ -15,7 +15,7 @@ export default function Game() {
         // Fetch game data by ID when component mounts
         const fetchGame = async () => {
             try {
-                const response = await axios.get(`/api/games/${gameId}`);
+                const response = await apiClient.get(`/games/${gameId}`);
                 const gameData = await response.data;
                 setMessage(gameData.prompt_text.toUpperCase());
             } catch (error) {
@@ -29,7 +29,7 @@ export default function Game() {
     useEffect(() => {
         async function loadSession() {
             try {
-                const res = await axios.get(`/api/game/session/${gameId}`);
+                const res = await apiClient.get(`/game/session/${gameId}`);
                 const data = await res.data;
                 if (data) {
                     setSession(data);
@@ -48,7 +48,7 @@ export default function Game() {
      async function handleTryAgain() {
         const deleteSession = async () => {
             try {
-                await axios.delete(`/api/game/session/${session.session_id}`);
+                await apiClient.delete(`/game/session/${session.session_id}`);
                 setSession(undefined);
             } catch (error) {
                 console.error("Error deleting session:", error);

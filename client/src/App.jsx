@@ -9,6 +9,7 @@ import ProtectedRoute from './router/ProtectedRoute';
 import Login from "./pages/Login";
 import SendInvite from "./pages/SendInvite";
 import AcceptInvite from "./pages/AcceptInvite";
+import AcceptInviteConfirm from "./pages/AcceptInviteConfirm";
 
 export default function App() {
 
@@ -18,6 +19,7 @@ export default function App() {
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/invite/accept" element={<AcceptInvite />} />
+          <Route path="/accept-invite/confirm" element={<AcceptInviteConfirm />} />
           {/* Protected Routes */}
           <Route element={<ProtectedRoute />}>
             <Route path="/" element={<GameList />} />
