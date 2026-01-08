@@ -25,59 +25,6 @@ app.use(cors());
 // HTTP request logger middleware
 app.use(morgan(':method :url :status :res[content-length] - :response-time ms'));
 
-app.post('/api/invites/accept', async (req, res) => {
-  const { token } = req.query;
-
-  const tokenHash = crypto
-    .createHash('sha256')
-    .update(token)
-    .digest('hex');
-
-  const { data: invite } = await supabase
-    .from('relationship_invites')
-    .select('*')
-    .eq('token_hash', tokenHash)
-    .eq('status', 'PENDING')
-    .gt('expires_at', new Date().toISOString())
-    .single();
-
-  if (!invite) {
-    return res.status(400).json({ error: 'Invalid or expired invite' });
-  }
-
-  // Invitee must already exist (Supabase Auth)
-  const { data: invitee } = await supabase
-    .from('users')
-    .select('*')
-    .eq('username', invite.invitee_username)
-    .single();
-
-  if (!invitee) {
-    return res.status(400).json({
-      error: 'Invitee must sign up first'
-    });
-  }
-
-  await supabase.from('user_relationships').insert({
-    user_id: invite.inviter_id,
-    related_user_id: invitee.user_id,
-    relationship_type: invite.relationship_type,
-    status: 'accepted',
-    initiated_by: invite.inviter_id
-  });
-
-  await supabase
-    .from('relationship_invites')
-    .update({
-      status: 'ACCEPTED',
-      accepted_at: new Date().toISOString()
-    })
-    .eq('invite_id', invite.invite_id);
-
-  res.json({ success: true });
-});
-
-
 // Middleware to verify auth token
 app.use(requireAuth);
 
@@ -292,42 +239,188 @@ app.get('/api/users/related', requireAuth, async (req, res) => {
   const { data, error } = await supabase
     .from('user_relationships')
     .select(`
-      related_user_id,
-      users!user_relationships_related_user_id_fkey (
-        user_id,
-        username
-      )
+      status,
+      user:users!user_relationships_user_id_fkey (user_id, username),
+      related_user:users!user_relationships_related_user_id_fkey (user_id, username)
     `)
-    .eq('user_id', userId)
+    // Use .or to check both columns for the current user's ID
+    .or(`user_id.eq.${userId},related_user_id.eq.${userId}`)
     .eq('status', 'accepted');
 
   if (error) return res.status(400).json({ error: error.message });
 
-  res.json(data.map(r => r.users));
+  // Map through the results and return the user that is NOT the current user
+  const relatedUsers = data.map(rel => {
+    return rel.user.user_id === userId ? rel.related_user : rel.user;
+  });
+
+  res.json(relatedUsers);
 });
 
+app.post('/api/users/check', requireAuth, async (req, res) => {
+  console.log('Logged in user: ', req.user);
+  const loggedInUser = req.user;
+  const username = req.body.username;
+  if (!username) res.status(400).send('No username sent!');
+  const { data, error } = await supabase
+    .from('users')
+    .select('*')
+    .eq('username', username)
+    .single();
+
+  if (error) return res.status(400).json({ error: error.message });
+  if (data.user_id === loggedInUser.id) {
+    return res.status(400).send('Sent username is exactly same as yours!');
+  }
+
+  console.log('user found: ', data);
+  res.json(data);
+});
 
 //invite api
+app.get('/api/invites', requireAuth, async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    const { data, error } = await supabase
+    .from('relationship_invites')
+    .select(`
+      invite_id, 
+      inviter_id, 
+      invitee_id, 
+      relationship_type, 
+      status, 
+      created_at,
+      inviter:users!inviter_id(username) // Get the name of the person who sent it
+    `)
+    .eq('invitee_id', userId) // Filter directly on the main table column
+    .eq('status', 'PENDING');
+
+    if (error) return res.status(400).json({ error: error.message });
+
+    console.log('Invite Data: ', data);
+    const formatted = data.map(i => ({
+      invite_id: i.invite_id,
+      inviter_id: i.inviter_id,
+      inviter_username: i.inviter?.username,
+      relationship_type: i.relationship_type,
+      status: i.status,
+      created_at: i.created_at
+    }));
+
+    res.json(formatted);
+  } catch (err) {
+    res.status(500).json({ error: 'Something went wrong while fetching invites' });
+  }
+});
+
 app.post('/api/invites/send', requireAuth, async (req, res) => {
-  const { inviteeUsername, relationshipType } = req.body;
-  const inviterId = req.user.id;
+  try {
+    const { inviteeUserId, relationshipType } = req.body;
+    const inviterId = req.user.id; // From your auth middleware
 
-  const token = crypto.randomBytes(32).toString('hex');
-  const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
+    const { data: inviteData, error: inviteError } = await supabase
+      .from('relationship_invites')
+      .insert({
+        inviter_id: inviterId,
+        invitee_id: inviteeUserId,
+        relationship_type: relationshipType,
+        status: 'PENDING'
+      })
+      .select();
 
-  const expiresAt = new Date(Date.now() + 86400000).toISOString();
+    if (inviteError) return res.status(400).json({ error: inviteError.message });
 
-  await supabase.from('relationship_invites').insert({
-    inviter_id: inviterId,
-    invitee_username: inviteeUsername,
-    relationship_type: relationshipType,
-    token_hash: tokenHash,
-    expires_at: expiresAt
-  });
+    res.json({ message: 'Invite sent successfully', invite: inviteData?.[0] });
+    
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to send invite' });
+  }
+});
 
-  res.json({
-    magicLink: `${process.env.FRONTEND_URL}/invite/accept?token=${token}`
-  });
+app.post('/api/invites/accept/:inviteId', requireAuth, async (req, res) => {
+  try {
+    const inviteId = req.params.inviteId;
+
+    const { data: invite, error: inviteErr } = await supabase
+      .from('relationship_invites')
+      .select('*')
+      .eq('status', 'PENDING')
+      .eq('invite_id', inviteId)
+      .single();
+
+    if (inviteErr || !invite) return res.status(400).json({ error: 'Invite not found' });
+
+    if (invite.invitee_username !== req.user.username) {
+      return res.status(403).json({ error: 'Not authorized to accept this invite' });
+    }
+
+    console.log('First pass: ', invite);
+
+    const { data: invitee, error: inviteeErr } = await supabase
+      .from('users')
+      .select('*')
+      .eq('user_id', invite.invitee_id)
+      .single();
+
+    if (inviteeErr || !invitee) return res.status(400).json({ error: 'Invitee must sign up first' });
+
+    console.log('Second pass: ', invitee);
+
+    const { error: insertErr } = await supabase.from('user_relationships').insert({
+      user_id: invite.inviter_id,
+      related_user_id: invitee.user_id,
+      relationship_type: invite.relationship_type,
+      status: 'accepted',
+      initiated_by: invite.inviter_id
+    });
+
+    if (insertErr) return res.status(400).json({ error: insertErr.message });
+
+    console.log('Third pass: ', insertErr);
+
+    const {error: updateError} = await supabase
+      .from('relationship_invites')
+      .update({
+        status: 'ACCEPTED',
+        accepted_at: new Date().toISOString()
+      })
+      .eq('invite_id', invite.invite_id);
+    
+    console.log('Fourth pass: ', updateError);
+
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to accept invite' });
+  }
+});
+
+app.post('/api/invites/reject/:inviteId', requireAuth, async (req, res) => {
+  try {
+    const inviteId = req.params.inviteId;
+
+    const { data: invite, error: inviteErr } = await supabase
+      .from('relationship_invites')
+      .select('*')
+      .eq('status', 'PENDING')
+      .eq('invite_id', inviteId)
+      .single();
+
+    if (inviteErr || !invite) return res.status(400).json({ error: 'Invite not found' });
+
+    if (invite.invitee_username !== req.user.username) {
+      return res.status(403).json({ error: 'Not authorized to reject this invite' });
+    }
+
+    await supabase
+      .from('relationship_invites')
+      .update({ status: 'REJECTED' })
+      .eq('invite_id', invite.invite_id);
+
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to reject invite' });
+  }
 });
 
 function setDifficultyLevel(promptText) {

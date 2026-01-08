@@ -14,7 +14,7 @@ export default function NewGame() {
     useEffect(() => {
         const fetchRelatedUsers = async () => {
             try {
-                const response = await apiClient.get(`/users/related/${user.id}`);
+                const response = await apiClient.get(`/users/related`);
                 setRelatedUsers(response.data);
                 setLoading(false);
             } catch (error) {

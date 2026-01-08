@@ -3,10 +3,11 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
 export default function Login() {
-  const [username, setUsername] = useState('');
-  //const [password, setPassword] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+
   const navigate = useNavigate();
   const { login } = useAuth();
 
@@ -16,12 +17,11 @@ export default function Login() {
     setLoading(true);
 
     try {
-      // Call the login function from context
-      await login({ username });
-      // Navigate to games page on successful login
+      await login({ email, password });
       navigate('/');
     } catch (err) {
-      setError(err.response?.data?.message || 'Login failed. Please try again.');
+      // Supabase errors come with a message property
+      setError(err.message || 'Invalid email or password');
     } finally {
       setLoading(false);
     }
@@ -32,28 +32,36 @@ export default function Login() {
       <div className="w-full max-w-md">
         <div className="card bg-base-100 shadow-2xl">
           <div className="card-body">
-            <h1 className="card-title text-3xl font-bold text-center mb-2">Decrypt Me</h1>
+            <h1 className="card-title text-3xl font-bold text-center mb-2">
+              Decrypt Me
+            </h1>
 
             <form onSubmit={handleSubmit} className="space-y-4">
-              {/* Email Input */}
-              <div className="form-control">
+              {/* Error */}
+              {error && (
+                <div className="alert alert-error shadow-lg">
+                  <span>{error}</span>
+                </div>
+              )}
+              {/* Email */}
+              <div className="form-control flex justify-between">
                 <label className="label p-2">
-                  <span className="label-text">Username</span>
+                  <span className="label-text">Email</span>
                 </label>
                 <input
-                  type="text"
-                  placeholder="Enter your username"
+                  type="email"
+                  placeholder="Enter your email"
                   className="input input-bordered"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
                   required
                   disabled={loading}
                 />
               </div>
 
-              {/* Password Input */}
-              {/*<div className="form-control">
-                <label className="label">
+              {/* Password */}
+              <div className="form-control flex justify-between">
+                <label className="label p-2">
                   <span className="label-text">Password</span>
                 </label>
                 <input
@@ -65,18 +73,10 @@ export default function Login() {
                   required
                   disabled={loading}
                 />
-              </div>*/}
+              </div>
 
-              {/* Error Message */}
-              {error && (
-                <div className="alert alert-error shadow-lg">
-                  <div>
-                    <span>{error}</span>
-                  </div>
-                </div>
-              )}
 
-              {/* Submit Button */}
+              {/* Submit */}
               <button
                 type="submit"
                 className="btn btn-primary w-full"
@@ -93,15 +93,6 @@ export default function Login() {
               </button>
             </form>
 
-            {/* Sign Up Link */}
-            {/*<div className="text-center mt-4">
-              <p className="text-sm text-gray-600">
-                Don't have an account?{' '}
-                <a href="/signup" className="link link-primary font-semibold">
-                  Sign up here
-                </a>
-              </p>
-            </div>*/}
           </div>
         </div>
       </div>

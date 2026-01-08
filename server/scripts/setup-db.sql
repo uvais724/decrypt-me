@@ -137,22 +137,15 @@ ON user_relationships (
 -- Relationship Invite table
 CREATE TABLE public.relationship_invites (
     invite_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    
     inviter_id UUID NOT NULL
         REFERENCES users(user_id)
         ON DELETE CASCADE,
-
-    invitee_username TEXT NOT NULL,
-
+    invitee_id  UUID NOT NULL
+        REFERENCES users(user_id),
     relationship_type relationship_type NOT NULL,
 
-    token_hash TEXT NOT NULL UNIQUE,
-
     status VARCHAR(20) NOT NULL DEFAULT 'PENDING'
-        CHECK (status IN ('PENDING', 'ACCEPTED', 'EXPIRED')),
-
-    expires_at TIMESTAMPTZ NOT NULL,
-
+        CHECK (status IN ('PENDING', 'ACCEPTED', 'REJECTED', 'BLOCKED')),
     created_at TIMESTAMPTZ DEFAULT NOW(),
     accepted_at TIMESTAMPTZ
 );

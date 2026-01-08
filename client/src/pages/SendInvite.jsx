@@ -1,56 +1,44 @@
-import React, { useState } from 'react';
-import { supabase } from '../lib/supabaseClient';
-import { useAuth } from '../context/AuthContext';
-import { hashToken } from '../utils/hashToken';
+import { useState } from 'react';
 import Navbar from '../components/Navbar';
 import { Link } from 'react-router-dom';
+import apiClient from '../lib/apiClient';
 
 export default function SendInvite() {
   const [username, setUsername] = useState('');
+  const [checkUser, setCheckUser] = useState(false);
+  const [checkUserFlag, setCheckUserFlag] = useState(null);
   const [relationshipType, setRelationshipType] = useState('');
-  const [magicLink, setMagicLink] = useState('');
   const [loading, setLoading] = useState(false);
-
-  const { user } = useAuth();
 
   const handleSendInvite = async () => {
     if (!username || !relationshipType) return;
 
     setLoading(true);
     try {
-      const token = crypto.randomUUID();
-      const tokenHash = await hashToken(token);
-
-      const expiresAt = new Date(Date.now() + 86400000).toISOString();
-
-      const { error } = await supabase
-        .from('relationship_invites')
-        .insert({
-          inviter_id: user.id,
-          invitee_username: username,
-          relationship_type: relationshipType,
-          token_hash: tokenHash,
-          expires_at: expiresAt
-        });
-
-      if (error) throw error;
-
-      setMagicLink(
-        `${window.location.origin}/invite/accept?token=${token}`
-      );
+      const response = await apiClient.post('/invites/send', { inviteeUserId: checkUser.user_id, relationshipType });
+      if(response.status === 200) {
+        alert('Invite send successfully!');
+      }
     } catch (err) {
       console.error('Invite error:', err.message);
     } finally {
       setLoading(false);
-    }
+    } 
   };
 
-  const copyMagicLink = async () => {
-    if (!magicLink) return;
+  const handleUserCheck = async () => {
+    if(!username) return;
     try {
-      await navigator.clipboard.writeText(magicLink);
-    } catch (err) {
-      console.error('Copy failed', err);
+      const response = await apiClient.post('/users/check', { username: username });
+      if(response.status === 200) {
+        console.log('User found!', response.data);
+        if(response.data) {
+          setCheckUser(response.data);
+          setCheckUserFlag(true);
+        }
+      }  
+    } catch(err) {
+      console.error('Error while checking user: ', err);
     }
   };
 
@@ -62,15 +50,17 @@ export default function SendInvite() {
           <div className="card-body">
             <h2 className="card-title text-2xl">Send Invite</h2>
 
-            <input
-              className="input input-bordered"
-              placeholder="Invitee username"
-              value={username}
-              onChange={e => setUsername(e.target.value)}
-            />
-
+            <div className="flex gap-2">
+              <input
+                className="input input-bordered"
+                placeholder="Invitee username"
+                value={username}
+                onChange={e => setUsername(e.target.value)}
+              />
+              <button className="btn btn-primary" onClick={handleUserCheck}>Check</button>
+            </div>
             <select
-              className="select select-bordered mt-2"
+              className="select select-bordered mt-2 w-full"
               value={relationshipType}
               onChange={e => setRelationshipType(e.target.value)}
             >
@@ -78,28 +68,16 @@ export default function SendInvite() {
               <option value="partner">Partner</option>
               <option value="friend">Friend</option>
               <option value="family">Family</option>
+              <option value="other">Other</option>
             </select>
 
             <button
               className="btn btn-primary mt-4"
               onClick={handleSendInvite}
-              disabled={loading}
+              disabled={!checkUserFlag}
             >
-              {loading ? 'Sending...' : 'Send Invite'}
+              Send Invite
             </button>
-
-            {magicLink && (
-              <div className='flex justify-center-safe items-center gap-1'>
-                <input
-                  className="input input-bordered mt-4"
-                  readOnly
-                  value={magicLink}
-                />
-                <button className="btn mt-3.5" onClick={copyMagicLink} disabled={!magicLink}>
-                  Copy
-                </button>
-              </div>
-            )}
 
             <Link to="/" className="btn btn-ghost mt-2">Cancel</Link>
           </div>
