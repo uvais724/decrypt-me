@@ -46,15 +46,26 @@ export default function Game() {
 
 
      async function handleTryAgain() {
-        const deleteSession = async () => {
+        const resetSession = async () => {
             try {
-                await apiClient.delete(`/game/session/${session.session_id}`);
-                setSession(undefined);
+                const guesses = {};
+                const initialRevealed = session.initial_revealed;
+                const cryptogramMap = session.cryptogram_map;
+                initialRevealed.forEach(index => {
+                    const char = message.charAt(index).toUpperCase();
+                    if (cryptogramMap[char]) {
+                        guesses[char] = cryptogramMap[char];
+                    }
+                });
+
+                const result = await apiClient.put('/game/session', { sessionId: session.session_id, initialRevealed, guesses });
+                console.log('Reset session: ', result);
+                setSession(result.data.result);
             } catch (error) {
-                console.error("Error deleting session:", error);
+                console.error("Error resetting session:", error);
             }
         };
-        await deleteSession();
+        await resetSession();
         setChildKey(prevKey => prevKey + 1);
     }
 

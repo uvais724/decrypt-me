@@ -81,6 +81,43 @@ app.post('/api/games/new-game', requireAuth, async (req, res) => {
     .select()
     .single();
 
+  //Created game session  
+  const gameId = await game.game_id;
+  const message = promptText.toUpperCase();
+  const cryptogramMap = generateCryptogramMap(promptText);
+  let revealedCharCount = 3;
+  if (difficulty === 'medium') {
+    revealedCharCount = 5;
+  } else if (difficulty === 'hard') {
+    revealedCharCount = 8;
+  }
+
+  const chars = message.split("");
+  const revealedIndices = pickRandomIndices(chars, revealedCharCount);
+  const initialRevealedIndices = revealedIndices;
+  const guesses = initializeGuesses(cryptogramMap, revealedIndices, message);
+  const activeIndex = findFirstUnrevealed(chars, revealedIndices);
+
+
+  const { error } = await supabase
+    .from('game_sessions')
+    .insert({
+      game_id: gameId,
+      user_id: userId,
+      message,
+      cryptogram_map: cryptogramMap,
+      guesses,
+      revealed_indices: revealedIndices,
+      initial_revealed: initialRevealedIndices,
+      active_index: activeIndex,
+    })
+    .select()
+    .single();
+
+  if (error) return res.status(500).json({ error: error.message });
+
+
+
   res.json({ gameId: game.game_id });
 });
 
@@ -160,46 +197,10 @@ app.get('/api/game/session/:gameId', requireAuth, async (req, res) => {
 });
 
 
-app.post('/api/game/session', requireAuth, async (req, res) => {
-  const {
-    gameId,
-    message,
-    cryptogramMap,
-    guesses,
-    activeIndex,
-    revealedIndices,
-    hintsUsed,
-    livesLeft
-  } = req.body;
-
-  const userId = req.user.id;
-
-  const { data, error } = await supabase
-    .from('game_sessions')
-    .insert({
-      game_id: gameId,
-      user_id: userId,
-      message,
-      cryptogram_map: cryptogramMap,
-      guesses,
-      revealed_indices: revealedIndices,
-      active_index: activeIndex,
-      hints_used: hintsUsed,
-      lives: livesLeft,
-    })
-    .select()
-    .single();
-
-  if (error) return res.status(400).json({ error: error.message });
-
-  res.json(data);
-});
-
-
 //api to persist game state
 app.patch('/api/game/session/:sessionId', requireAuth, async (req, res) => {
   const { sessionId } = req.params;
-  const { guesses, revealedIndices, hintsUsed, livesLeft } = req.body;
+  const { guesses, revealedIndices, hintsUsed, lives, activeIndex } = req.body;
 
   const { data, error } = await supabase
     .from('game_sessions')
@@ -207,7 +208,8 @@ app.patch('/api/game/session/:sessionId', requireAuth, async (req, res) => {
       guesses,
       revealed_indices: revealedIndices,
       hints_used: hintsUsed,
-      lives: livesLeft,
+      lives: lives,
+      active_index: activeIndex,
       updated_at: new Date().toISOString()
     })
     .eq('session_id', sessionId)
@@ -217,6 +219,28 @@ app.patch('/api/game/session/:sessionId', requireAuth, async (req, res) => {
   if (error) return res.status(400).json({ error: error.message });
 
   res.json(data);
+});
+
+app.put('/api/game/session', requireAuth, async (req, res) => {
+  
+  const { sessionId, initialRevealed, guesses } = req.body;
+
+  const { data, error } = await supabase
+    .from('game_sessions')
+    .update({
+      revealed_indices: initialRevealed,
+      hints_used: 0,
+      lives: 3,
+      active_index: 0,
+      guesses
+    })
+    .eq('session_id', sessionId)
+    .select()
+    .single();
+
+  if (error) return res.status(400).json({ error: error.message });
+
+  res.json({ message: 'Game resetted successfully', result: data });
 });
 
 app.delete('/api/game/session/:sessionId', requireAuth, async (req, res) => {
@@ -231,6 +255,7 @@ app.delete('/api/game/session/:sessionId', requireAuth, async (req, res) => {
 
   res.json({ message: 'Game session deleted successfully' });
 });
+
 
 app.get('/api/users/related', requireAuth, async (req, res) => {
   const userId = req.user.id;
@@ -282,8 +307,8 @@ app.get('/api/invites', requireAuth, async (req, res) => {
     const userId = req.user.id;
 
     const { data, error } = await supabase
-    .from('relationship_invites')
-    .select(`
+      .from('relationship_invites')
+      .select(`
       invite_id, 
       inviter_id, 
       invitee_id, 
@@ -292,8 +317,8 @@ app.get('/api/invites', requireAuth, async (req, res) => {
       created_at,
       inviter:users!inviter_id(username) // Get the name of the person who sent it
     `)
-    .eq('invitee_id', userId) // Filter directly on the main table column
-    .eq('status', 'PENDING');
+      .eq('invitee_id', userId) // Filter directly on the main table column
+      .eq('status', 'PENDING');
 
     if (error) return res.status(400).json({ error: error.message });
 
@@ -331,7 +356,7 @@ app.post('/api/invites/send', requireAuth, async (req, res) => {
     if (inviteError) return res.status(400).json({ error: inviteError.message });
 
     res.json({ message: 'Invite sent successfully', invite: inviteData?.[0] });
-    
+
   } catch (err) {
     res.status(500).json({ error: 'Failed to send invite' });
   }
@@ -378,14 +403,14 @@ app.post('/api/invites/accept/:inviteId', requireAuth, async (req, res) => {
 
     console.log('Third pass: ', insertErr);
 
-    const {error: updateError} = await supabase
+    const { error: updateError } = await supabase
       .from('relationship_invites')
       .update({
         status: 'ACCEPTED',
         accepted_at: new Date().toISOString()
       })
       .eq('invite_id', invite.invite_id);
-    
+
     console.log('Fourth pass: ', updateError);
 
     res.json({ success: true });
@@ -428,4 +453,62 @@ function setDifficultyLevel(promptText) {
   if (wordCount < 50) return 'easy';
   if (wordCount <= 100) return 'medium';
   return 'hard';
+}
+
+
+function generateCryptogramMap(text) {
+  const letters = [...new Set(text.toUpperCase().match(/[A-Z]/g))];
+  const numbers = Array.from({ length: 26 }, (_, i) => i + 1);
+
+  shuffle(numbers);
+
+  const map = {};
+  letters.forEach((letter, i) => {
+    map[letter] = numbers[i];
+  });
+
+  return map;
+}
+
+function shuffle(array) {
+  // Fisher–Yates shuffle using crypto for better randomness
+  for (let i = array.length - 1; i > 0; i--) {
+    const j = crypto.randomInt(0, i + 1);
+    [array[i], array[j]] = [array[j], array[i]];
+  }
+  return array;
+}
+
+function pickRandomIndices(chars, count) {
+  console.log('Characters" ', chars);
+  const result = chars
+    .map((c, i) => (/[A-Z]/.test(c) ? i : null))
+    .filter(i => i !== null)
+    .sort(() => 0.5 - Math.random())
+    .slice(0, count);
+  console.log('Result: ', result);
+  return result;
+}
+
+
+function findFirstUnrevealed(chars, revealed) {
+  return chars.findIndex(
+    (c, i) => /[A-Z]/.test(c) && !revealed.includes(i)
+  );
+}
+
+function initializeGuesses(cryptogramMap, revealedIndices, message) {
+  console.log('Cryptogram map: ', cryptogramMap);
+  console.log('Initial reveaded indices: ', revealedIndices);
+  console.log('Message: ', message);
+  const guesses = {};
+  // For revealed indices, map the character to its cryptogram number
+  revealedIndices.forEach(index => {
+    const char = message.charAt(index).toUpperCase();
+    if (cryptogramMap[char]) {
+      guesses[char] = cryptogramMap[char];
+    }
+  });
+
+  return guesses;
 }

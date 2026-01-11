@@ -8,7 +8,6 @@ export function useCryptogramGame(
     {
         initialLives = 3,
         initialState = null,      // 👈 backend session data
-        onPersist = null          // 👈 function to save state
     } = {}
 ) {
     const chars = useMemo(() => message.split(""), [message]);
@@ -16,56 +15,19 @@ export function useCryptogramGame(
     /* ------------------ CORE STATE ------------------ */
     const [lives, setLives] = useState(initialState?.lives ?? initialLives);
     const [guesses, setGuesses] = useState(initialState?.guesses ?? {});
-    const [revealedIndices, setRevealedIndices] = useState(() => {
-        if (initialState?.revealed_indices) {
-            return initialState.revealed_indices;
-        }
-        return pickRandomIndices(chars, 3);
-    });
+    const [revealedIndices, setRevealedIndices] = useState(initialState?.revealed_indices);
 
     const [hintsUsed, setHintsUsed] = useState(initialState?.hints_used ?? 0);
-    const [activeIndex, setActiveIndex] = useState(() => {
-        if (initialState?.active_index !== undefined) {
-            return initialState.active_index;
-        }
-        return findFirstUnrevealed(
-            chars,
-            initialState?.revealed_indices ?? []
-        );
-    });
+    const [activeIndex, setActiveIndex] = useState(initialState?.active_index);
 
 
     const [errorIndex, setErrorIndex] = useState(null);
     const [isGameComplete, setIsGameComplete] = useState(false);
 
     /* ------------------ CRYPTOGRAM MAP (STABLE) ------------------ */
-    const cryptogramMapRef = useRef(null);
-
-    if (!cryptogramMapRef.current) {
-        if (initialState?.cryptogram_map) {
-            cryptogramMapRef.current = new Map(
+    const cryptogramMap = new Map(
                 Object.entries(initialState.cryptogram_map)
             );
-        } else {
-            const map = new Map();
-            const used = new Set();
-
-            chars.forEach(char => {
-                if (ALPHABET_REGEX.test(char) && !map.has(char)) {
-                    let value;
-                    do {
-                        value = Math.floor(Math.random() * 26) + 1;
-                    } while (used.has(value));
-                    used.add(value);
-                    map.set(char, value);
-                }
-            });
-
-            cryptogramMapRef.current = map;
-        }
-    }
-
-    const cryptogramMap = cryptogramMapRef.current;
 
     /* ------------------ DERIVED MAPS ------------------ */
 
@@ -181,32 +143,6 @@ export function useCryptogramGame(
         }
     }, [board, moveToNextIndex]);
 
-    /* ------------------ PERSISTENCE ------------------ */
-
-    const debounceRef = useRef();
-
-    useEffect(() => {
-        if (!onPersist) return;
-
-        clearTimeout(debounceRef.current);
-        debounceRef.current = setTimeout(() => {
-            onPersist(serialize());
-        }, 500);
-
-        return () => clearTimeout(debounceRef.current);
-    }, [lives, guesses, revealedIndices, hintsUsed, activeIndex]);
-
-    const serialize = () => ({
-        message,
-        cryptogramMap: Object.fromEntries(cryptogramMap),
-        guesses,
-        revealedIndices,
-        activeIndex,
-        livesLeft: lives,
-        hintsUsed,
-        status: isGameComplete ? "COMPLETED" : "IN_PROGRESS"
-    });
-
     /* ------------------ KEYBOARD INPUT ------------------ */
 
     useEffect(() => {
@@ -233,22 +169,7 @@ export function useCryptogramGame(
         partiallyRevealedKeys,
         isGameComplete,
         revealRandomCell,
-        serialize
+        revealedIndices,
+        guesses,
     };
-}
-
-/* ------------------ HELPERS ------------------ */
-
-function pickRandomIndices(chars, count) {
-    return chars
-        .map((c, i) => (/[A-Z]/.test(c) ? i : null))
-        .filter(i => i !== null)
-        .sort(() => 0.5 - Math.random())
-        .slice(0, count);
-}
-
-function findFirstUnrevealed(chars, revealed) {
-    return chars.findIndex(
-        (c, i) => /[A-Z]/.test(c) && !revealed.includes(i)
-    );
 }
