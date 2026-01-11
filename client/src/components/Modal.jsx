@@ -28,7 +28,6 @@ export default function Modal({ gameId, sessionId, gamePuzzle, gameResult, onTry
          const deleteSession = async () => {
             try {
                 await apiClient.delete(`/game/session/${sessionId}`);
-                setSession(undefined);
             } catch (error) {
                 console.error("Error deleting session:", error);
             }

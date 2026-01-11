@@ -128,8 +128,6 @@ app.get('/api/games/list/:userId', requireAuth, async (req, res) => {
     .from('games')
     .select(`
       game_id,
-      lives_left,
-      hints_used,
       difficulty_level,
       status,
       prompts!inner (
