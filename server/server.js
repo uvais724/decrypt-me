@@ -11,6 +11,24 @@ const app = express();
 import { PORT } from './config.js';
 import requireAuth from './middlewares/auth-middleware.js';
 
+import fs from 'fs'; // For reading SQL file
+import { fileURLToPath } from 'url';
+import { dirname, join } from 'path';
+
+if (process.env.NODE_ENV && process.env.NODE_ENV.trim() === 'production') {
+  const __filename = fileURLToPath(import.meta.url);
+  const __dirname = dirname(__filename);
+  const frontendBuildPath = join(__dirname, '../client/dist');
+  if (fs.existsSync(frontendBuildPath)) {
+    app.use(express.static(frontendBuildPath));
+
+    app.get(/.*/, (req, res) => {
+      res.sendFile(join(frontendBuildPath, 'index.html'));
+    });
+
+  }
+}
+
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
@@ -220,7 +238,7 @@ app.patch('/api/game/session/:sessionId', requireAuth, async (req, res) => {
 });
 
 app.put('/api/game/session', requireAuth, async (req, res) => {
-  
+
   const { sessionId, initialRevealed, guesses } = req.body;
 
   const { data, error } = await supabase
