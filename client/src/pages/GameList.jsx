@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom';
-import apiClient from '../lib/apiClient';
+import { supabase } from '../lib/supabaseClient';
 import { useAuth } from '../context/AuthContext';
 import Navbar from '../components/Navbar';
 import Loading from '../components/Loading';
@@ -24,11 +24,42 @@ export default function GameList() {
         if (!user) return;
         const fetchAllGamesInProgress = async () => {
             try {
-                const response = await apiClient.get(`/games/list/${user.id}`);
-                const gamesData = response.data;
-                console.log(gamesData);
-                setGamesList(gamesData);
+                const { data, error } = await supabase
+                .from('games')
+                .select(`
+                    game_id,
+                    difficulty_level,
+                    status,
+                    prompts (
+                        prompt_text,
+                        sender_id,
+                        users!prompts_sender_id_fkey(username)
+                    ),
+                    game_sessions (
+                        revealed_indices,
+                        lives,
+                        hints_used
+                    )
+                `)
+                .eq('prompts.receiver_id', user.id)
+                .eq('status', 'IN_PROGRESS');
+
+                    
+                if(data) {
+                    const gamesData =  data.map(g => ({
+                        game_id: g.game_id,
+                        difficulty_level: g.difficulty_level,
+                        prompt_text: g.prompts.prompt_text,
+                        sender: g.prompts.users.username,
+                        lives_left: g.game_sessions?.[0]?.lives ?? g.lives_left,
+                        hints_used: g.game_sessions?.[0]?.hints_used ?? g.hints_used,
+                        revealed_indices: g.game_sessions?.[0]?.revealed_indices ?? []
+                    }));
+                    console.log(gamesData);
+                    setGamesList(gamesData);
+                }
                 setLoading(false);
+                if(error) throw error;
             } catch (error) {
                 console.error("Error fetching all games:", error);
                 setLoading(false);
@@ -37,7 +68,7 @@ export default function GameList() {
         fetchAllGamesInProgress();
     }, [user])
 
-    if(loading) return <Loading />;
+    if (loading) return <Loading />;
 
     return (
         <>
