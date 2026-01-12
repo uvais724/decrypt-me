@@ -8,7 +8,7 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "build:frontend": "cd ../client && npm install && npm run build",
     "prod": "cross-env NODE_ENV=production node server.js",
-    "deploy": "npm run build:frontend && npm run prod"
+    "deploy": "npm run build:frontend && npm install && npm run prod"
   },
   "keywords": [],
   "author": "",
