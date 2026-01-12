@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import apiClient from '../lib/apiClient';
 import Navbar from '../components/Navbar';
+import Loading from '../components/Loading';
 
 export default function Invites() {
   const [invites, setInvites] = useState([]);
@@ -68,7 +69,7 @@ export default function Invites() {
         </div>
 
         {loading ? (
-          <div className="py-16">Loading...</div>
+          <Loading />
         ) : (!invites || invites.length === 0) ? (
           <div className="py-16">
             <p className="text-center italic text-neutral">No invites</p>
