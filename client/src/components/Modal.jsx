@@ -1,9 +1,10 @@
-import React, { useEffect, useRef } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom';
 import apiClient from '../lib/apiClient';
 
 export default function Modal({ gameId, sessionId, gamePuzzle, gameResult, onTryAgain }) {
     const dialogRef = useRef(null);
+    const [loading, setLoading] = useState(true);
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -28,8 +29,10 @@ export default function Modal({ gameId, sessionId, gamePuzzle, gameResult, onTry
          const deleteSession = async () => {
             try {
                 await apiClient.delete(`/game/session/${sessionId}`);
+                setLoading(false);
             } catch (error) {
                 console.error("Error deleting session:", error);
+                setLoading(false);
             }
         };
         await deleteSession();

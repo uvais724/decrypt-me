@@ -3,10 +3,12 @@ import { Link } from 'react-router-dom';
 import apiClient from '../lib/apiClient';
 import { useAuth } from '../context/AuthContext';
 import Navbar from '../components/Navbar';
+import Loading from '../components/Loading';
 
 export default function GameList() {
     const [gamesList, setGamesList] = useState([]);
     const { user } = useAuth();
+    const [loading, setLoading] = useState(true);
 
     const difficultyBadge = (level) => {
         if (!level) return 'badge badge-neutral';
@@ -26,17 +28,20 @@ export default function GameList() {
                 const gamesData = response.data;
                 console.log(gamesData);
                 setGamesList(gamesData);
+                setLoading(false);
             } catch (error) {
                 console.error("Error fetching all games:", error);
+                setLoading(false);
             }
         };
         fetchAllGamesInProgress();
     }, [user])
 
+    if(loading) return <Loading />;
+
     return (
         <>
             <Navbar />
-
             <div className="container mx-auto p-6">
                 <div className="flex items-center justify-between mb-6">
                     <h1 className="text-3xl font-extrabold">Games In Progress</h1>

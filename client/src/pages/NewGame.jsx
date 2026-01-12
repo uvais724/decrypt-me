@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import apiClient from '../lib/apiClient';
 import Navbar from '../components/Navbar';
+import Loading from '../components/Loading';
 
 export default function NewGame() {
     const { user } = useAuth();
@@ -30,6 +31,7 @@ export default function NewGame() {
 
     const onsubmit = async (e) => {
         e.preventDefault();
+        setLoading(true);
         const message = e.target.Message.value;
         try {
             const response = await apiClient.post('/games/new-game', {
@@ -38,12 +40,15 @@ export default function NewGame() {
                 recipientId: selectedUser
             });
             const data = await response.data;
+            setLoading(false);
             console.log(data);
             navigate('/');
         } catch (error) {
             console.error('Error submitting game:', error);
         }
     }
+
+    if(loading) return <Loading />;
 
     return (
         <>

@@ -3,6 +3,7 @@ import GameEngine from '../components/GameEngine';
 import { useParams } from 'react-router-dom';
 import apiClient from '../lib/apiClient';
 import Navbar from '../components/Navbar';
+import Loading from '../components/Loading';
 
 export default function Game() {
     const { gameId } = useParams();
@@ -12,14 +13,17 @@ export default function Game() {
     const [childKey, setChildKey] = useState(0);
 
     useEffect(() => {
+        setLoading(true);
         // Fetch game data by ID when component mounts
         const fetchGame = async () => {
             try {
                 const response = await apiClient.get(`/games/${gameId}`);
                 const gameData = await response.data;
                 setMessage(gameData.prompt_text.toUpperCase());
+                setLoading(false);
             } catch (error) {
                 console.error("Error fetching game data:", error);
+                setLoading(false);
             }
         };
 
@@ -27,7 +31,8 @@ export default function Game() {
     }, [])
 
     useEffect(() => {
-        async function loadSession() {
+        setLoading(true);
+        const loadSession = async () => {
             try {
                 const res = await apiClient.get(`/game/session/${gameId}`);
                 const data = await res.data;
@@ -37,7 +42,7 @@ export default function Game() {
                 setLoading(false);
             } catch (error) {
                 console.error("Error loading session:", error);
-                await setLoading(false);
+                setLoading(false);
             }
         }
 
@@ -46,6 +51,7 @@ export default function Game() {
 
 
      async function handleTryAgain() {
+        setLoading(true);
         const resetSession = async () => {
             try {
                 const guesses = {};
@@ -61,15 +67,17 @@ export default function Game() {
                 const result = await apiClient.put('/game/session', { sessionId: session.session_id, initialRevealed, guesses });
                 console.log('Reset session: ', result);
                 setSession(result.data.result);
+                setLoading(false);
             } catch (error) {
                 console.error("Error resetting session:", error);
+                setLoading(false);
             }
         };
         await resetSession();
         setChildKey(prevKey => prevKey + 1);
     }
 
-    if (loading || !message) return <div>Loading...</div>;
+    if (loading || !session) return <Loading />;
 
     return (
         <>
