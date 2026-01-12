@@ -1,9 +1,10 @@
-import React, { useEffect, useRef } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import apiClient from '../lib/apiClient';
 
 export default function Modal({ gameId, sessionId, gamePuzzle, gameResult, onTryAgain }) {
     const dialogRef = useRef(null);
+    const [loading, setLoading] = useState(true);
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -11,8 +12,8 @@ export default function Modal({ gameId, sessionId, gamePuzzle, gameResult, onTry
         if(gamePuzzle) {
             const updateGameStatus = async () => {
                 try {
-                    const response = await axios.put(`/api/games/${gameId}`, {
-                        status: 'solved'
+                    const response = await apiClient.put(`/games/${gameId}`, {
+                        status: 'SOLVED'
                     });
                     const data = await response.data;
                     console.log('Game status updated:', data);
@@ -27,10 +28,11 @@ export default function Modal({ gameId, sessionId, gamePuzzle, gameResult, onTry
     const handleClose = async () => {
          const deleteSession = async () => {
             try {
-                await axios.delete(`/api/game/session/${session_id}`);
-                setSession(undefined);
+                await apiClient.delete(`/game/session/${sessionId}`);
+                setLoading(false);
             } catch (error) {
                 console.error("Error deleting session:", error);
+                setLoading(false);
             }
         };
         await deleteSession();

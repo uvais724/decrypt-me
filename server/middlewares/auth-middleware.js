@@ -1,25 +1,32 @@
-import jwt from 'jsonwebtoken';
-import { SECRET } from './../config.js';
-import client from '../db/dbConn.js';
+// middlewares/requireAuth.js
+import supabase from "../db/dbConn.js";
+
 
 const requireAuth = async (req, res, next) => {
-    const { authorization } = req.headers;
+  const authHeader = req.headers.authorization;
 
-    if(!authorization) {
-        res.status(401).json({error: 'Authorization token required!'});
+  if (!authHeader) {
+    return res.status(401).json({ error: 'Missing auth token' });
+  }
+
+  const token = authHeader.replace('Bearer ', '');
+  console.log('Auth: token', token);
+
+  try {
+     // Verify the token using the admin client
+    const { data: { user }, error } = await supabase.auth.getUser(token); // Verify the JWT
+
+    if (error) {
+      throw error;
     }
 
-    const token = authorization.split(' ')[1];
-
-    try {
-        const { id }  = jwt.verify(token, SECRET);
-        req.user =  await client.query('SELECT * FROM users WHERE user_id = $1', [id]).then(result => result.rows[0]);
-        next();
-    } catch(error) {
-        console.log(error);
-        res.status(401).json({error: 'Unauthorized!'});
-    }
-    
+    // Attach user info to the request object
+    req.user = user;
+    next(); // All good, proceed to the route handler
+  } catch (err) {
+    console.log('JWT error: ', err);
+    return res.status(401).json({ error: 'Invalid token' });
+  }
 };
 
 export default requireAuth;

@@ -2,24 +2,37 @@
 import express from 'express';
 import morgan from 'morgan';
 import cors from 'cors';
-import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
+import supabase from './db/dbConn.js';
 
 const app = express();
 
 // Import database client and configuration
-import client from './db/dbConn.js';
-import { PORT, FRONTEND_URL } from './config.js';
+import { PORT } from './config.js';
 import requireAuth from './middlewares/auth-middleware.js';
 
-// Connect to the database and start the server
-client.connect().then(() => {
-  app.listen(PORT, () => {
-    console.log(`Server is running in ${process.env.NODE_ENV || 'development'} mode on port ${PORT}`);
-  });
-}).catch((error) => {
-  console.error('Database connection error:', error);
+import fs from 'fs'; // For reading SQL file
+import { fileURLToPath } from 'url';
+import { dirname, join } from 'path';
+
+if (process.env.NODE_ENV && process.env.NODE_ENV.trim() === 'production') {
+  const __filename = fileURLToPath(import.meta.url);
+  const __dirname = dirname(__filename);
+  const frontendBuildPath = join(__dirname, '../client/dist');
+  if (fs.existsSync(frontendBuildPath)) {
+    app.use(express.static(frontendBuildPath));
+
+    app.get(/.*/, (req, res) => {
+      res.sendFile(join(frontendBuildPath, 'index.html'));
+    });
+
+  }
+}
+
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
 });
+
 
 // Middleware to parse JSON bodies
 app.use(express.json({ limit: '50mb' }));
@@ -30,241 +43,424 @@ app.use(cors());
 // HTTP request logger middleware
 app.use(morgan(':method :url :status :res[content-length] - :response-time ms'));
 
-app.post('/api/login', async (req, res) => {
-  const { username } = req.body;
-  const queryResult = await client.query('SELECT * FROM users WHERE username = $1', [username]);
-  if (queryResult.rows.length === 0) {
-    return res.status(404).json({ error: 'User not found' });
-  }
-  const user = queryResult.rows[0];
-  const token = jwt.sign({ userId: user.user_id, username: user.username }, process.env.SECRET);
-  res.json({ token });
-});
-
-app.post('/api/invites/accept', async (req, res) => {
-  const token = req.query.token;
-  let userId;
-
-  const tokenHash = crypto
-    .createHash('sha256')
-    .update(token)
-    .digest('hex');
-
-  const { rows } = await client.query(
-    `SELECT * FROM relationship_invites
-     WHERE token_hash = $1
-       AND status = 'PENDING'
-       AND expires_at > NOW()`,
-    [tokenHash]
-  );
-
-  if (!rows.length) {
-    return res.status(400).json({ error: "Invalid or expired invite" });
-  }
-
-  const invite = rows[0];
-  //check if the invitee username exists
-  const inviteeResult = await client.query(
-    `SELECT * FROM users WHERE username = $1`,
-    [invite.invitee_username]
-  );
-
-  if (inviteeResult.rows.length === 0) {
-    //create user if not exists
-    const newUserResult = await client.query(
-      `INSERT INTO users (username) VALUES ($1) RETURNING *`,
-      [invite.invitee_username]
-    );
-    userId = newUserResult.rows[0].user_id;
-  } else {
-    userId = inviteeResult.rows[0].user_id;
-  }
-
-  // Create relationship
-  await client.query(
-    `INSERT INTO user_relationships
-     (user_id, related_user_id, relationship_type, status, initiated_by)
-     VALUES ($1, $2, $3, 'accepted', $4),
-     ($2, $1, $3, 'accepted', $1)
-     ON CONFLICT DO NOTHING
-     RETURNING relationship_id`,
-    [
-      invite.inviter_id,
-      userId,
-      invite.relationship_type,
-      invite.inviter_id
-    ]
-  );
-
-  // Mark invite accepted
-  await client.query(
-    `UPDATE relationship_invites
-     SET status = 'ACCEPTED', accepted_at = NOW()
-     WHERE invite_id = $1`,
-    [invite.invite_id]
-  );
-
-  res.json({ success: true });
-});
-
-
 // Middleware to verify auth token
 app.use(requireAuth);
 
-app.get('/api/games/:gameId', async (req, res) => {
-  const gameId = req.params.gameId;
-  const queryResult = await client.query('SELECT p.prompt_text FROM games g join prompts p ON g.prompt_id = p.prompt_id WHERE g.game_id = $1 and status = $2', [gameId, 'in_progress']);
-  res.json(queryResult.rows[0]);
+app.get('/api/games/:gameId', requireAuth, async (req, res) => {
+  const { gameId } = req.params;
+
+  const { data, error } = await supabase
+    .from('games')
+    .select(`
+      game_id,
+      prompts!inner(prompt_text)
+    `)
+    .eq('game_id', gameId)
+    .eq('status', 'IN_PROGRESS')
+    .single();
+
+  if (error) return res.status(400).json({ error: error.message });
+
+  res.json({ prompt_text: data.prompts.prompt_text });
 });
 
-app.get('/api/games/list/:userId', async (req, res) => {
-  const userId = req.params.userId;
-  const queryResult = await client.query(`SELECT g.game_id, 
-    -- Logic for Lives
-    CASE 
-        WHEN s.lives IS NOT NULL AND s.lives != g.lives_left THEN s.lives 
-        ELSE g.lives_left 
-    END AS lives_left,
-    -- Logic for Hints
-    CASE 
-        WHEN s.hints_used IS NOT NULL AND s.hints_used != g.hints_used THEN s.hints_used 
-        ELSE g.hints_used 
-    END AS hints_used,
-    g.difficulty_level, 
-    p.prompt_text, 
-    u.username, 
-    s.revealed_indices  
-FROM games g  
-JOIN prompts p ON g.prompt_id = p.prompt_id  
-JOIN users u ON u.user_id = p.sender_id
-LEFT JOIN game_sessions s ON s.game_id = g.game_id
-WHERE g.status = $1 AND p.receiver_id = $2`, ['in_progress', userId]);
-  res.json(queryResult.rows);
+app.post('/api/games/new-game', requireAuth, async (req, res) => {
+  const { promptText, recipientId } = req.body;
+  const userId = req.user.id;
+
+  const { count } = await supabase
+    .from('games')
+    .select('*', { count: 'exact', head: true })
+    .eq('status', 'IN_PROGRESS');
+
+  if (count > 5) {
+    return res.status(400).json({ error: 'Max games reached' });
+  }
+
+  const { data: prompt } = await supabase
+    .from('prompts')
+    .insert({
+      sender_id: userId,
+      receiver_id: recipientId,
+      prompt_text: promptText,
+      type: 'custom'
+    })
+    .select()
+    .single();
+
+  const difficulty = setDifficultyLevel(promptText);
+
+  const { data: game } = await supabase
+    .from('games')
+    .insert({
+      prompt_id: prompt.prompt_id,
+      difficulty_level: difficulty
+    })
+    .select()
+    .single();
+
+  //Created game session  
+  const gameId = await game.game_id;
+  const message = promptText.toUpperCase();
+  const cryptogramMap = generateCryptogramMap(promptText);
+  let revealedCharCount = 3;
+  if (difficulty === 'medium') {
+    revealedCharCount = 5;
+  } else if (difficulty === 'hard') {
+    revealedCharCount = 8;
+  }
+
+  const chars = message.split("");
+  const revealedIndices = pickRandomIndices(chars, revealedCharCount);
+  const initialRevealedIndices = revealedIndices;
+  const guesses = initializeGuesses(cryptogramMap, revealedIndices, message);
+  const activeIndex = findFirstUnrevealed(chars, revealedIndices);
+
+
+  const { error } = await supabase
+    .from('game_sessions')
+    .insert({
+      game_id: gameId,
+      user_id: userId,
+      message,
+      cryptogram_map: cryptogramMap,
+      guesses,
+      revealed_indices: revealedIndices,
+      initial_revealed: initialRevealedIndices,
+      active_index: activeIndex,
+    })
+    .select()
+    .single();
+
+  if (error) return res.status(500).json({ error: error.message });
+
+
+
+  res.json({ gameId: game.game_id });
 });
 
-app.put('/api/games/:gameId', async (req, res) => {
-  const gameId = req.params.gameId;
-  const status = req.body.status;
-  const queryResult = await client.query('UPDATE games SET status = $1, solved_at = NOW() WHERE game_id = $2 RETURNING *', [status, gameId]);
-  res.json(queryResult.rows[0]);
+
+app.get('/api/games/list/:userId', requireAuth, async (req, res) => {
+  const userId = req.user.id;
+  const { data, error } = await supabase
+    .from('games')
+    .select(`
+      game_id,
+      difficulty_level,
+      status,
+      prompts!inner (
+        prompt_text,
+        sender_id,
+        users!prompts_sender_id_fkey(username)
+      ),
+      game_sessions (
+        revealed_indices,
+        lives,
+        hints_used
+      )
+    `)
+    .eq('prompts.receiver_id', userId)
+    .eq('status', 'IN_PROGRESS');
+
+  if (error) return res.status(400).json({ error: error.message });
+
+  const formatted = data.map(g => ({
+    game_id: g.game_id,
+    difficulty_level: g.difficulty_level,
+    prompt_text: g.prompts.prompt_text,
+    sender: g.prompts.users.username,
+    lives_left: g.game_sessions?.[0]?.lives ?? g.lives_left,
+    hints_used: g.game_sessions?.[0]?.hints_used ?? g.hints_used,
+    revealed_indices: g.game_sessions?.[0]?.revealed_indices ?? []
+  }));
+
+  res.json(formatted);
 });
 
-app.get('/api/game/session/:gameId', async (req, res) => {
-  const gameId = req.params.gameId;
-  const queryResult = await client.query('SELECT * from game_sessions WHERE game_id = $1', [gameId]);
-  res.json(queryResult.rows[0]);
+
+app.put('/api/games/:gameId', requireAuth, async (req, res) => {
+  const { gameId } = req.params;
+  const { status } = req.body;
+
+  const { data, error } = await supabase
+    .from('games')
+    .update({
+      status,
+      solved_at: new Date().toISOString()
+    })
+    .eq('game_id', gameId)
+    .select()
+    .single();
+
+  if (error) return res.status(400).json({ error: error.message });
+
+  res.json(data);
 });
 
 
-app.post('/api/game/session', async (req, res) => {
-  const gameId = req.body.gameId;
-  const userId = req.body.userId;
-  const message = req.body.message;
-  const cryptogramMap = JSON.stringify(req.body.cryptogramMap);
-  const guesses = JSON.stringify(req.body.guesses);
-  const activeIndex = req.body.activeIndex;
-  const revealedIndices = JSON.stringify(req.body.revealedIndices);
-  const hintsUsed = req.body.hintsUsed;
-  const livesLeft = req.body.livesLeft;
-  const createdAt = new Date().toISOString();
+app.get('/api/game/session/:gameId', requireAuth, async (req, res) => {
+  const { gameId } = req.params;
 
-  const queryResult = await client.query(
-    'INSERT INTO game_sessions (game_id, user_id, message, cryptogram_map, revealed_indices, guesses, active_index, lives, hints_used, created_at) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING *',
-    [gameId, userId, message, cryptogramMap, revealedIndices, guesses, activeIndex, livesLeft, hintsUsed, createdAt]
-  );
-  res.json(queryResult.rows[0]);
+  const { data, error } = await supabase
+    .from('game_sessions')
+    .select('*')
+    .eq('game_id', gameId)
+    .single();
+
+  if (error) return res.status(404).json({ error: 'Session not found' });
+
+  res.json(data);
 });
+
 
 //api to persist game state
-app.patch('/api/game/session/:sessionId', async (req, res) => {
-  const sessionId = req.params.sessionId;
-  const guesses = JSON.stringify(req.body.guesses);
-  const revealedIndices = JSON.stringify(req.body.revealedIndices);
-  const hintsUsed = req.body.hintsUsed;
-  const livesLeft = req.body.livesLeft;
+app.patch('/api/game/session/:sessionId', requireAuth, async (req, res) => {
+  const { sessionId } = req.params;
+  const { guesses, revealedIndices, hintsUsed, lives, activeIndex } = req.body;
 
-  const queryResult = await client.query(
-    'UPDATE game_sessions SET guesses = $1, revealed_indices = $2, lives = $3, hints_used = $4, updated_at = NOW() WHERE session_id = $5 RETURNING *',
-    [guesses, revealedIndices, livesLeft, hintsUsed, sessionId]
-  );
-  res.json(queryResult.rows[0]);
+  const { data, error } = await supabase
+    .from('game_sessions')
+    .update({
+      guesses,
+      revealed_indices: revealedIndices,
+      hints_used: hintsUsed,
+      lives: lives,
+      active_index: activeIndex,
+      updated_at: new Date().toISOString()
+    })
+    .eq('session_id', sessionId)
+    .select()
+    .single();
+
+  if (error) return res.status(400).json({ error: error.message });
+
+  res.json(data);
 });
 
-app.post('/api/games/new-game', async (req, res) => {
-  const promptText = req.body.promptText;
-  const userId = req.body.userId;
-  const recipientId = req.body.recipientId;
+app.put('/api/game/session', requireAuth, async (req, res) => {
 
-  //check if 5 games in progress exist for this user with the same sender and receiver
-  const existingGamesResult = await client.query(
-    `SELECT COUNT(*) FROM games g
-    JOIN prompts p ON g.prompt_id = p.prompt_id
-    WHERE g.status = 'in_progress' AND p.sender_id = $1`,
-    [userId]
-  );
+  const { sessionId, initialRevealed, guesses } = req.body;
 
-  if (existingGamesResult.rows[0].count > 5) {
-    return res.status(400).json({ error: 'Maximum number of games in progress reached' });
-  }
+  const { data, error } = await supabase
+    .from('game_sessions')
+    .update({
+      revealed_indices: initialRevealed,
+      hints_used: 0,
+      lives: 3,
+      active_index: 0,
+      guesses
+    })
+    .eq('session_id', sessionId)
+    .select()
+    .single();
 
-  const promptResult = await client.query(
-    'INSERT INTO prompts (sender_id, prompt_text, type, created_at, receiver_id) VALUES ($1, $2, $3, $4, $5) RETURNING *',
-    [userId, promptText, 'custom', new Date().toISOString(), recipientId]
-  );
-  //check if the prompt was created
-  if (promptResult.rows.length === 0) {
-    return res.status(500).json({ error: 'Failed to create prompt' });
-  }
+  if (error) return res.status(400).json({ error: error.message });
 
-  const promptId = promptResult.rows[0].prompt_id;
-  const difficulty_level = setDifficultyLevel(promptText);
-
-  const gameResult = await client.query(
-    'INSERT INTO games (prompt_id, status, difficulty_level) VALUES ($1, $2, $3) RETURNING *',
-    [promptId, 'in_progress', difficulty_level]
-  );
-
-  if (gameResult.rows.length === 0) {
-    await client.query('DELETE FROM prompts WHERE prompt_id = $1', [promptId]);
-    return res.status(500).json({ error: 'Failed to create game' });
-  }
-
-  res.json(`Game: ${gameResult.rows[0].game_id} created successfully`);
+  res.json({ message: 'Game resetted successfully', result: data });
 });
 
-app.get('/api/users/related/:userId', async (req, res) => {
-  const userId = req.params.userId;
-  const queryResult = await client.query('SELECT u.user_id, u.username FROM users u JOIN user_relationships r ON u.user_id = r.related_user_id WHERE r.user_id = $1 and r.status = $2', [userId, 'accepted']);
-  res.json(queryResult.rows);
-});
+app.delete('/api/game/session/:sessionId', requireAuth, async (req, res) => {
+  const { sessionId } = req.params;
 
-app.delete('/api/game/session/:sessionId', async (req, res) => {
-  const sessionId = req.params.sessionId;
-  await client.query('DELETE FROM game_sessions WHERE session_id = $1', [sessionId]);
+  const { error } = await supabase
+    .from('game_sessions')
+    .delete()
+    .eq('session_id', sessionId);
+
+  if (error) return res.status(400).json({ error: error.message });
+
   res.json({ message: 'Game session deleted successfully' });
 });
 
+
+app.get('/api/users/related', requireAuth, async (req, res) => {
+  const userId = req.user.id;
+
+  const { data, error } = await supabase
+    .from('user_relationships')
+    .select(`
+      status,
+      user:users!user_relationships_user_id_fkey (user_id, username),
+      related_user:users!user_relationships_related_user_id_fkey (user_id, username)
+    `)
+    // Use .or to check both columns for the current user's ID
+    .or(`user_id.eq.${userId},related_user_id.eq.${userId}`)
+    .eq('status', 'accepted');
+
+  if (error) return res.status(400).json({ error: error.message });
+
+  // Map through the results and return the user that is NOT the current user
+  const relatedUsers = data.map(rel => {
+    return rel.user.user_id === userId ? rel.related_user : rel.user;
+  });
+
+  res.json(relatedUsers);
+});
+
+app.post('/api/users/check', requireAuth, async (req, res) => {
+  console.log('Logged in user: ', req.user);
+  const loggedInUser = req.user;
+  const username = req.body.username;
+  if (!username) res.status(400).send('No username sent!');
+  const { data, error } = await supabase
+    .from('users')
+    .select('*')
+    .eq('username', username)
+    .single();
+
+  if (error) return res.status(400).json({ error: error.message });
+  if (data.user_id === loggedInUser.id) {
+    return res.status(400).send('Sent username is exactly same as yours!');
+  }
+
+  console.log('user found: ', data);
+  res.json(data);
+});
+
 //invite api
-app.post('/api/invites/send', async (req, res) => {
-  const { userId, inviteeUsername, relationshipType } = req.body;
-  //const inviteId = uuidv4();
+app.get('/api/invites', requireAuth, async (req, res) => {
+  try {
+    const userId = req.user.id;
 
-  const token = crypto.randomBytes(32).toString('hex');
-  const tokenHash = crypto
-    .createHash('sha256')
-    .update(token)
-    .digest('hex');
+    const { data, error } = await supabase
+      .from('relationship_invites')
+      .select(`
+      invite_id, 
+      inviter_id, 
+      invitee_id, 
+      relationship_type, 
+      status, 
+      created_at,
+      inviter:users!inviter_id(username) // Get the name of the person who sent it
+    `)
+      .eq('invitee_id', userId) // Filter directly on the main table column
+      .eq('status', 'PENDING');
 
-  const expiresAt = new Date(Date.now() + 1000 * 60 * 60 * 24); // 24h
+    if (error) return res.status(400).json({ error: error.message });
 
-  await client.query(
-    `INSERT INTO relationship_invites
-     (inviter_id, invitee_username, relationship_type, token_hash, expires_at)
-     VALUES ($1, $2, $3, $4, $5)`,
-    [userId, inviteeUsername, relationshipType, tokenHash, expiresAt]
-  );
-  const magicLink = `${FRONTEND_URL}/invite/accept?token=${token}`;
-  res.json({ magicLink });
+    console.log('Invite Data: ', data);
+    const formatted = data.map(i => ({
+      invite_id: i.invite_id,
+      inviter_id: i.inviter_id,
+      inviter_username: i.inviter?.username,
+      relationship_type: i.relationship_type,
+      status: i.status,
+      created_at: i.created_at
+    }));
+
+    res.json(formatted);
+  } catch (err) {
+    res.status(500).json({ error: 'Something went wrong while fetching invites' });
+  }
+});
+
+app.post('/api/invites/send', requireAuth, async (req, res) => {
+  try {
+    const { inviteeUserId, relationshipType } = req.body;
+    const inviterId = req.user.id; // From your auth middleware
+
+    const { data: inviteData, error: inviteError } = await supabase
+      .from('relationship_invites')
+      .insert({
+        inviter_id: inviterId,
+        invitee_id: inviteeUserId,
+        relationship_type: relationshipType,
+        status: 'PENDING'
+      })
+      .select();
+
+    if (inviteError) return res.status(400).json({ error: inviteError.message });
+
+    res.json({ message: 'Invite sent successfully', invite: inviteData?.[0] });
+
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to send invite' });
+  }
+});
+
+app.post('/api/invites/accept/:inviteId', requireAuth, async (req, res) => {
+  try {
+    const inviteId = req.params.inviteId;
+
+    const { data: invite, error: inviteErr } = await supabase
+      .from('relationship_invites')
+      .select('*')
+      .eq('status', 'PENDING')
+      .eq('invite_id', inviteId)
+      .single();
+
+    if (inviteErr || !invite) return res.status(400).json({ error: 'Invite not found' });
+
+    if (invite.invitee_username !== req.user.username) {
+      return res.status(403).json({ error: 'Not authorized to accept this invite' });
+    }
+
+    console.log('First pass: ', invite);
+
+    const { data: invitee, error: inviteeErr } = await supabase
+      .from('users')
+      .select('*')
+      .eq('user_id', invite.invitee_id)
+      .single();
+
+    if (inviteeErr || !invitee) return res.status(400).json({ error: 'Invitee must sign up first' });
+
+    console.log('Second pass: ', invitee);
+
+    const { error: insertErr } = await supabase.from('user_relationships').insert({
+      user_id: invite.inviter_id,
+      related_user_id: invitee.user_id,
+      relationship_type: invite.relationship_type,
+      status: 'accepted',
+      initiated_by: invite.inviter_id
+    });
+
+    if (insertErr) return res.status(400).json({ error: insertErr.message });
+
+    console.log('Third pass: ', insertErr);
+
+    const { error: updateError } = await supabase
+      .from('relationship_invites')
+      .update({
+        status: 'ACCEPTED',
+        accepted_at: new Date().toISOString()
+      })
+      .eq('invite_id', invite.invite_id);
+
+    console.log('Fourth pass: ', updateError);
+
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to accept invite' });
+  }
+});
+
+app.post('/api/invites/reject/:inviteId', requireAuth, async (req, res) => {
+  try {
+    const inviteId = req.params.inviteId;
+
+    const { data: invite, error: inviteErr } = await supabase
+      .from('relationship_invites')
+      .select('*')
+      .eq('status', 'PENDING')
+      .eq('invite_id', inviteId)
+      .single();
+
+    if (inviteErr || !invite) return res.status(400).json({ error: 'Invite not found' });
+
+    if (invite.invitee_username !== req.user.username) {
+      return res.status(403).json({ error: 'Not authorized to reject this invite' });
+    }
+
+    await supabase
+      .from('relationship_invites')
+      .update({ status: 'REJECTED' })
+      .eq('invite_id', invite.invite_id);
+
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to reject invite' });
+  }
 });
 
 function setDifficultyLevel(promptText) {
@@ -273,4 +469,62 @@ function setDifficultyLevel(promptText) {
   if (wordCount < 50) return 'easy';
   if (wordCount <= 100) return 'medium';
   return 'hard';
+}
+
+
+function generateCryptogramMap(text) {
+  const letters = [...new Set(text.toUpperCase().match(/[A-Z]/g))];
+  const numbers = Array.from({ length: 26 }, (_, i) => i + 1);
+
+  shuffle(numbers);
+
+  const map = {};
+  letters.forEach((letter, i) => {
+    map[letter] = numbers[i];
+  });
+
+  return map;
+}
+
+function shuffle(array) {
+  // Fisher–Yates shuffle using crypto for better randomness
+  for (let i = array.length - 1; i > 0; i--) {
+    const j = crypto.randomInt(0, i + 1);
+    [array[i], array[j]] = [array[j], array[i]];
+  }
+  return array;
+}
+
+function pickRandomIndices(chars, count) {
+  console.log('Characters" ', chars);
+  const result = chars
+    .map((c, i) => (/[A-Z]/.test(c) ? i : null))
+    .filter(i => i !== null)
+    .sort(() => 0.5 - Math.random())
+    .slice(0, count);
+  console.log('Result: ', result);
+  return result;
+}
+
+
+function findFirstUnrevealed(chars, revealed) {
+  return chars.findIndex(
+    (c, i) => /[A-Z]/.test(c) && !revealed.includes(i)
+  );
+}
+
+function initializeGuesses(cryptogramMap, revealedIndices, message) {
+  console.log('Cryptogram map: ', cryptogramMap);
+  console.log('Initial reveaded indices: ', revealedIndices);
+  console.log('Message: ', message);
+  const guesses = {};
+  // For revealed indices, map the character to its cryptogram number
+  revealedIndices.forEach(index => {
+    const char = message.charAt(index).toUpperCase();
+    if (cryptogramMap[char]) {
+      guesses[char] = cryptogramMap[char];
+    }
+  });
+
+  return guesses;
 }

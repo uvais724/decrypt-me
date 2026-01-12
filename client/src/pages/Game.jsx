@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react'
 import GameEngine from '../components/GameEngine';
 import { useParams } from 'react-router-dom';
-import axios from 'axios';
+import apiClient from '../lib/apiClient';
 import Navbar from '../components/Navbar';
+import Loading from '../components/Loading';
 
 export default function Game() {
     const { gameId } = useParams();
@@ -12,14 +13,17 @@ export default function Game() {
     const [childKey, setChildKey] = useState(0);
 
     useEffect(() => {
+        setLoading(true);
         // Fetch game data by ID when component mounts
         const fetchGame = async () => {
             try {
-                const response = await axios.get(`/api/games/${gameId}`);
+                const response = await apiClient.get(`/games/${gameId}`);
                 const gameData = await response.data;
                 setMessage(gameData.prompt_text.toUpperCase());
+                setLoading(false);
             } catch (error) {
                 console.error("Error fetching game data:", error);
+                setLoading(false);
             }
         };
 
@@ -27,9 +31,10 @@ export default function Game() {
     }, [])
 
     useEffect(() => {
-        async function loadSession() {
+        setLoading(true);
+        const loadSession = async () => {
             try {
-                const res = await axios.get(`/api/game/session/${gameId}`);
+                const res = await apiClient.get(`/game/session/${gameId}`);
                 const data = await res.data;
                 if (data) {
                     setSession(data);
@@ -37,7 +42,7 @@ export default function Game() {
                 setLoading(false);
             } catch (error) {
                 console.error("Error loading session:", error);
-                await setLoading(false);
+                setLoading(false);
             }
         }
 
@@ -46,19 +51,33 @@ export default function Game() {
 
 
      async function handleTryAgain() {
-        const deleteSession = async () => {
+        setLoading(true);
+        const resetSession = async () => {
             try {
-                await axios.delete(`/api/game/session/${session.session_id}`);
-                setSession(undefined);
+                const guesses = {};
+                const initialRevealed = session.initial_revealed;
+                const cryptogramMap = session.cryptogram_map;
+                initialRevealed.forEach(index => {
+                    const char = message.charAt(index).toUpperCase();
+                    if (cryptogramMap[char]) {
+                        guesses[char] = cryptogramMap[char];
+                    }
+                });
+
+                const result = await apiClient.put('/game/session', { sessionId: session.session_id, initialRevealed, guesses });
+                console.log('Reset session: ', result);
+                setSession(result.data.result);
+                setLoading(false);
             } catch (error) {
-                console.error("Error deleting session:", error);
+                console.error("Error resetting session:", error);
+                setLoading(false);
             }
         };
-        await deleteSession();
+        await resetSession();
         setChildKey(prevKey => prevKey + 1);
     }
 
-    if (loading || !message) return <div>Loading...</div>;
+    if (loading || !session) return <Loading />;
 
     return (
         <>

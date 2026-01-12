@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import axios from 'axios';
+import apiClient from '../lib/apiClient';
 import Navbar from '../components/Navbar';
+import Loading from '../components/Loading';
 
 export default function NewGame() {
     const { user } = useAuth();
@@ -14,7 +15,7 @@ export default function NewGame() {
     useEffect(() => {
         const fetchRelatedUsers = async () => {
             try {
-                const response = await axios.get(`/api/users/related/${user.userId}`);
+                const response = await apiClient.get(`/users/related`);
                 setRelatedUsers(response.data);
                 setLoading(false);
             } catch (error) {
@@ -23,27 +24,31 @@ export default function NewGame() {
             }
         };
 
-        if (user?.userId) {
+        if (user?.id) {
             fetchRelatedUsers();
         }
-    }, [user?.userId]);
+    }, [user?.id]);
 
     const onsubmit = async (e) => {
         e.preventDefault();
+        setLoading(true);
         const message = e.target.Message.value;
         try {
-            const response = await axios.post('/api/games/new-game', {
+            const response = await apiClient.post('/games/new-game', {
                 promptText: message,
-                userId: user.userId,
+                userId: user.id,
                 recipientId: selectedUser
             });
             const data = await response.data;
+            setLoading(false);
             console.log(data);
             navigate('/');
         } catch (error) {
             console.error('Error submitting game:', error);
         }
     }
+
+    if(loading) return <Loading />;
 
     return (
         <>
