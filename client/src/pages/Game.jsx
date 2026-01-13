@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react'
 import GameEngine from '../components/GameEngine';
 import { useParams } from 'react-router-dom';
-import apiClient from '../lib/apiClient';
 import Navbar from '../components/Navbar';
 import Loading from '../components/Loading';
 import { supabase } from '../lib/supabaseClient';

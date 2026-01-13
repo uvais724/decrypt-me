@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import apiClient from '../lib/apiClient';
 import Navbar from '../components/Navbar';
 import Loading from '../components/Loading';
 import { supabase } from '../lib/supabaseClient';
@@ -14,11 +13,6 @@ export default function Invites() {
   useEffect(() => {
     const getAllInvites = async () => {
       try {
-        // const response = await apiClient.get('/invites');
-        // if (response.status === 200) {
-        //   setInvites(response.data);
-        // }
-
         const { data, error } = await supabase
           .from('relationship_invites')
           .select(`
@@ -57,7 +51,6 @@ export default function Invites() {
 
   const acceptInvite = async (inviteId) => {
     try {
-      //await apiClient.post(`/invites/accept/${inviteId}`);
       const { data: invite, error: inviteErr } = await supabase
         .from('relationship_invites')
         .select('*')
@@ -93,7 +86,6 @@ export default function Invites() {
 
   const rejectInvite = async (inviteId) => {
     try {
-      //await apiClient.post(`/invites/reject/${inviteId}`);
       const { data: invite, error: inviteErr } = await supabase
         .from('relationship_invites')
         .select('*')
