@@ -121,7 +121,7 @@ app.post('/api/games/new-game', requireAuth, async (req, res) => {
     .from('game_sessions')
     .insert({
       game_id: gameId,
-      user_id: userId,
+      user_id: recipientId,
       message,
       cryptogram_map: cryptogramMap,
       guesses,
@@ -522,7 +522,7 @@ function initializeGuesses(cryptogramMap, revealedIndices, message) {
   revealedIndices.forEach(index => {
     const char = message.charAt(index).toUpperCase();
     if (cryptogramMap[char]) {
-      guesses[char] = cryptogramMap[char];
+      guesses[cryptogramMap[char]] = char;
     }
   });
 

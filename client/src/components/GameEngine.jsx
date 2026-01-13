@@ -5,7 +5,7 @@ import Board from "./Board";
 import Keyboard from "./Keyboard";
 import Lives from "./Lives";
 import Modal from "./Modal";
-import apiClient from '../lib/apiClient';
+import { supabase } from '../lib/supabaseClient';
 import { useAuth } from '../context/AuthContext';
 import { useEffect, useRef } from 'react';
 
@@ -81,11 +81,30 @@ export default function GameEngine({
 
     try {
       console.log("Persisting session:", payload);
-      const response = await apiClient.patch(`/game/session/${session.session_id}`, payload);
+
+      const { data, error } = await supabase
+      .from('game_sessions')
+      .update({
+        guesses:payload.guesses,
+        revealed_indices: payload.revealedIndices,
+        hints_used: payload.hintsUsed,
+        lives: payload.lives,
+        active_index: payload.activeIndex,
+        updated_at: new Date().toISOString()
+      })
+      .eq('session_id', session.session_id)
+      .eq('user_id', user.id)
+      .select('session_id')
+      .single();
+
+      if(data) {
+        console.log('Session updated" ', data);
+      }
 
       // Update the "last saved" marker after successful save
       lastSavedStateRef.current = payload;
-      console.log('Session updated:', response.data);
+
+      if (error) throw error;
     } catch (error) {
       console.error("Failed to persist session:", error);
     }
