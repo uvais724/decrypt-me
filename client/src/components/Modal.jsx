@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom';
-import apiClient from '../lib/apiClient';
+import { supabase } from '../lib/supabaseClient';
 
 export default function Modal({ gameId, sessionId, gamePuzzle, gameResult, onTryAgain }) {
     const dialogRef = useRef(null);
@@ -9,14 +9,24 @@ export default function Modal({ gameId, sessionId, gamePuzzle, gameResult, onTry
 
     useEffect(() => {
         dialogRef.current?.showModal();
-        if(gamePuzzle) {
+        if (gamePuzzle) {
             const updateGameStatus = async () => {
                 try {
-                    const response = await apiClient.put(`/games/${gameId}`, {
-                        status: 'SOLVED'
-                    });
-                    const data = await response.data;
-                    console.log('Game status updated:', data);
+                    // const response = await apiClient.put(`/games/${gameId}`, {
+                    //     status: 'SOLVED'
+                    // });
+                    // const data = await response.data;
+                    // console.log('Game status updated:', data);
+                    const { error } = await supabase
+                        .from('games')
+                        .update({
+                            status: 'SOLVED',
+                            solved_at: new Date().toISOString()
+                        })
+                        .eq('game_id', gameId);
+
+                    if (error) throw error;
+
                 } catch (error) {
                     console.error('Error updating game status:', error);
                 }
@@ -26,9 +36,15 @@ export default function Modal({ gameId, sessionId, gamePuzzle, gameResult, onTry
     }, []);
 
     const handleClose = async () => {
-         const deleteSession = async () => {
+        const deleteSession = async () => {
             try {
-                await apiClient.delete(`/game/session/${sessionId}`);
+                //await apiClient.delete(`/game/session/${sessionId}`);
+                const { error } = await supabase
+                    .from('game_sessions')
+                    .delete()
+                    .eq('session_id', sessionId);
+
+                if (error) throw error;
                 setLoading(false);
             } catch (error) {
                 console.error("Error deleting session:", error);

@@ -111,7 +111,7 @@ export default function NewGame() {
                 if (data) {
                     // Map through the results and return the user that is NOT the current user
                     const relatedUsers = data.map(rel => {
-                        return rel.user.user_id === user.Id ? rel.related_user : rel.user;
+                        return rel.user.user_id === userId ? rel.related_user : rel.user;
                     });
                     setRelatedUsers(relatedUsers);
                     setLoading(false);
