@@ -112,10 +112,10 @@ export default function GameEngine({
 
   useEffect(() => {
     // Handler for closing tab / refreshing
-    const handleBeforeUnload = (event) => {
+    const handleBeforeUnload = async (event) => {
       // Note: Most modern browsers don't allow async calls in beforeunload.
       // Use navigator.sendBeacon() if the request fails consistently here.
-      persistData();
+      await persistData();
     };
 
     window.addEventListener('beforeunload', handleBeforeUnload);

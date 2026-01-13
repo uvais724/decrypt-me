@@ -30,7 +30,7 @@ export default function GameList() {
                     game_id,
                     difficulty_level,
                     status,
-                    prompts (
+                    prompts!inner (
                         prompt_text,
                         sender_id,
                         users!prompts_sender_id_fkey(username)
