@@ -80,14 +80,33 @@ export default function Game() {
                 initialRevealed.forEach(index => {
                     const char = message.charAt(index).toUpperCase();
                     if (cryptogramMap[char]) {
-                        guesses[char] = cryptogramMap[char];
+                        guesses[cryptogramMap[char]] = char;
                     }
                 });
 
-                const result = await apiClient.put('/game/session', { sessionId: session.session_id, initialRevealed, guesses });
-                console.log('Reset session: ', result);
-                setSession(result.data.result);
+                const activeIndex = message.split('').findIndex((c, i) => /[A-Z]/.test(c) && !session.revealed_indices.includes(i))
+
+                const { data, error } = await supabase
+                    .from('game_sessions')
+                    .update({
+                    revealed_indices: initialRevealed,
+                    hints_used: 0,
+                    lives: 3,
+                    active_index: activeIndex,
+                    guesses
+                    })
+                    .eq('session_id', session.session_id)
+                    .select()
+                    .single();
+
+                if(data) {
+                    setSession(data);
+                }
+                
+                if(error) throw error;
+
                 setLoading(false);
+                
             } catch (error) {
                 console.error("Error resetting session:", error);
                 setLoading(false);

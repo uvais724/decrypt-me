@@ -12,11 +12,6 @@ export default function Modal({ gameId, sessionId, gamePuzzle, gameResult, onTry
         if (gamePuzzle) {
             const updateGameStatus = async () => {
                 try {
-                    // const response = await apiClient.put(`/games/${gameId}`, {
-                    //     status: 'SOLVED'
-                    // });
-                    // const data = await response.data;
-                    // console.log('Game status updated:', data);
                     const { error } = await supabase
                         .from('games')
                         .update({
@@ -38,7 +33,6 @@ export default function Modal({ gameId, sessionId, gamePuzzle, gameResult, onTry
     const handleClose = async () => {
         const deleteSession = async () => {
             try {
-                //await apiClient.delete(`/game/session/${sessionId}`);
                 const { error } = await supabase
                     .from('game_sessions')
                     .delete()
