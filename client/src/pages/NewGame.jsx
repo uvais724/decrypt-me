@@ -106,7 +106,7 @@ export default function NewGame() {
                 `)
                     // Use .or to check both columns for the current user's ID
                     .or(`user_id.eq.${userId},related_user_id.eq.${userId}`)
-                    .eq('status', 'accepted');
+                    .eq('status', 'ACCEPTED');
 
                 if (data) {
                     // Map through the results and return the user that is NOT the current user

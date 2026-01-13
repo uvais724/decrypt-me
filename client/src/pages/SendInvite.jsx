@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import Navbar from '../components/Navbar';
 import { Link } from 'react-router-dom';
-import apiClient from '../lib/apiClient';
+import { supabase } from '../lib/supabaseClient';
+import { useAuth } from '../context/AuthContext';
 
 export default function SendInvite() {
   const [username, setUsername] = useState('');
@@ -10,15 +11,29 @@ export default function SendInvite() {
   const [relationshipType, setRelationshipType] = useState('');
   const [loading, setLoading] = useState(false);
 
+  const {user} = useAuth();
+
   const handleSendInvite = async () => {
     if (!username || !relationshipType) return;
 
     setLoading(true);
     try {
-      const response = await apiClient.post('/invites/send', { inviteeUserId: checkUser.user_id, relationshipType });
-      if(response.status === 200) {
+      const { data: inviteData, error: inviteError } = await supabase
+      .from('relationship_invites')
+      .insert({
+        inviter_id: user.id,
+        invitee_id: checkUser.user_id,
+        relationship_type: relationshipType,
+        status: 'PENDING'
+      })
+      .select();
+      
+      if(inviteData) {
         alert('Invite send successfully!');
       }
+
+      if(inviteError) throw error;
+
     } catch (err) {
       console.error('Invite error:', err.message);
     } finally {
@@ -29,14 +44,20 @@ export default function SendInvite() {
   const handleUserCheck = async () => {
     if(!username) return;
     try {
-      const response = await apiClient.post('/users/check', { username: username });
-      if(response.status === 200) {
-        console.log('User found!', response.data);
-        if(response.data) {
-          setCheckUser(response.data);
+      const { data, error } = await supabase
+        .from('users')
+        .select('*')
+        .eq('username', username)
+        .single();
+
+       if(data && data.user_id !== user.id) {
+          setCheckUser(data);
           setCheckUserFlag(true);
-        }
-      }  
+       } else {
+        throw new Error('You cannot add you own username!');
+       }
+
+       if(error) throw error;
     } catch(err) {
       console.error('Error while checking user: ', err);
     }
