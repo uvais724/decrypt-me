@@ -1,20 +1,44 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import apiClient from '../lib/apiClient';
 import Navbar from '../components/Navbar';
 import Loading from '../components/Loading';
+import { supabase } from '../lib/supabaseClient';
+import { useAuth } from '../context/AuthContext';
 
 export default function Invites() {
   const [invites, setInvites] = useState([]);
   const [loading, setLoading] = useState(true);
+  const { user } = useAuth();
 
   useEffect(() => {
     const getAllInvites = async () => {
       try {
-        const response = await apiClient.get('/invites');
-        if (response.status === 200) {
-          setInvites(response.data);
+        const { data, error } = await supabase
+          .from('relationship_invites')
+          .select(`
+            invite_id, 
+            inviter_id, 
+            invitee_id, 
+            relationship_type, 
+            status, 
+            created_at,
+            inviter:users!inviter_id(username) // Get the name of the person who sent it
+          `)
+          .eq('invitee_id', user.id) // Filter directly on the main table column
+          .eq('status', 'PENDING');
+
+        if (data) {
+          const result = data.map(i => ({
+            invite_id: i.invite_id,
+            inviter_id: i.inviter_id,
+            inviter_username: i.inviter?.username,
+            relationship_type: i.relationship_type,
+            status: i.status,
+            created_at: i.created_at
+          }));
+          setInvites(result);
         }
+        if (error) throw error;
       } catch (err) {
         console.error('Error while trying to fetch invites', err);
       } finally {
@@ -27,7 +51,33 @@ export default function Invites() {
 
   const acceptInvite = async (inviteId) => {
     try {
-      await apiClient.post(`/invites/accept/${inviteId}`);
+      const { data: invite, error: inviteErr } = await supabase
+        .from('relationship_invites')
+        .select('*')
+        .eq('status', 'PENDING')
+        .eq('invite_id', inviteId)
+        .single();
+
+      if (inviteErr) throw inviteErr;
+
+      const { data: invitee, error: inviteeErr } = await supabase
+        .from('users')
+        .select('*')
+        .eq('user_id', invite.invitee_id)
+        .single();
+
+      if(inviteeErr) throw inviteeErr;
+
+      const { error: insertErr } = await supabase.from('user_relationships').insert({
+        user_id: invitee.user_id,
+        related_user_id: invite.inviter_id,
+        relationship_type: invite.relationship_type,
+        status: 'ACCEPTED',
+        initiated_by: invitee.user_id
+      });
+
+      if(insertErr) throw insertErr;
+
       setInvites(prev => prev.filter(i => i.invite_id !== inviteId));
     } catch (err) {
       console.error('Failed to accept invite', err);
@@ -36,7 +86,22 @@ export default function Invites() {
 
   const rejectInvite = async (inviteId) => {
     try {
-      await apiClient.post(`/invites/reject/${inviteId}`);
+      const { data: invite, error: inviteErr } = await supabase
+        .from('relationship_invites')
+        .select('*')
+        .eq('status', 'PENDING')
+        .eq('invite_id', inviteId)
+        .single();
+
+      if(inviteErr) throw inviteErr;
+
+      const { error } = await supabase
+        .from('relationship_invites')
+        .update({ status: 'REJECTED' })
+        .eq('invite_id', invite.invite_id);
+
+      if(error) throw error;
+
       setInvites(prev => prev.filter(i => i.invite_id !== inviteId));
     } catch (err) {
       console.error('Failed to reject invite', err);
