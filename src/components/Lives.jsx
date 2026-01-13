@@ -9,11 +9,11 @@ export default function Lives({ lives, maxLives = 3 }) {
           {hearts.map((_, i) => {
             const filled = i < Math.max(0, lives);
             return filled ? (
-              <svg key={i} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className="h-6 w-6 text-red-500">
+              <svg key={i} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className="h-6 w-6 max-sm:h-3 max-sm:w-3  text-red-500">
                 <path fill="currentColor" d="M12 21s-7.5-4.735-10-8.01A6.5 6.5 0 0112 3.5a6.5 6.5 0 0110 9.49C19.5 16.265 12 21 12 21z" />
               </svg>
             ) : (
-              <svg key={i} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className="h-6 w-6 text-gray-300">
+              <svg key={i} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className="h-6 w-6 max-sm:h-3 max-sm:w-3 text-gray-300">
                 <path fill="none" stroke="currentColor" strokeWidth="1.5" d="M12 21s-7.5-4.735-10-8.01A6.5 6.5 0 0112 3.5a6.5 6.5 0 0110 9.49C19.5 16.265 12 21 12 21z" />
               </svg>
             );
