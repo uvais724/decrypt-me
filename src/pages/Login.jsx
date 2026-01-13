@@ -45,7 +45,7 @@ export default function Login() {
               )}
               {/* Email */}
               <div className="form-control flex justify-between">
-                <label className="label p-2">
+                <label className="label py-2 px-5">
                   <span className="label-text">Email</span>
                 </label>
                 <input
