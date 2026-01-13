@@ -6,5 +6,9 @@ module.exports = {
              'max-sm': {'max': '639px'},
         },
     },
-    plugins: [],
+    plugins: [require('daisyui')],
+    daisyui: {
+        themes: ["light"], // Only include the light theme
+        darkTheme: "light", // Optional: ensures "darkTheme" fallback also uses light
+    }
 }
