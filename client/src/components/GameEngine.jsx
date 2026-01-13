@@ -120,10 +120,10 @@ export default function GameEngine({
 
     window.addEventListener('beforeunload', handleBeforeUnload);
 
-    return () => {
+    return async () => {
       // CLEANUP: This runs when the user changes routes (component unmounts)
       window.removeEventListener('beforeunload', handleBeforeUnload);
-      persistData();
+      await persistData();
     };
   }, []); // Empty dependency array ensures this setup runs once
 
