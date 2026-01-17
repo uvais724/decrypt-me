@@ -7,6 +7,7 @@ import Lives from "./Lives";
 import Modal from "./Modal";
 import { supabase } from '../lib/supabaseClient';
 import { useAuth } from '../context/AuthContext';
+import { useGameRefresh } from '../context/GameRefreshContext';
 import { useEffect, useRef } from 'react';
 
 export default function GameEngine({
@@ -14,9 +15,10 @@ export default function GameEngine({
   message,
   session,
   setSession,
-  onTryAgain
+  onTryAgain,
 }) {
   const { user } = useAuth();
+  const { triggerRefresh } = useGameRefresh();
   // 🔹 Holds latest serialized game state
   const latestStateRef = useRef(null);
 
@@ -97,10 +99,11 @@ export default function GameEngine({
       .select('session_id')
       .single();
 
+      // Trigger refresh in GameList via Context
       if(data) {
-        console.log('Session updated" ', data);
+        triggerRefresh();
       }
-
+      
       // Update the "last saved" marker after successful save
       lastSavedStateRef.current = payload;
 

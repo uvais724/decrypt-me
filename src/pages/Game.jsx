@@ -120,7 +120,14 @@ export default function Game() {
     return (
         <>
             <Navbar />
-            <GameEngine key={childKey} gameId={gameId} message={message} session={session} setSession={setSession} onTryAgain={handleTryAgain} />
+            <GameEngine 
+                key={childKey} 
+                gameId={gameId} 
+                message={message} 
+                session={session} 
+                setSession={setSession} 
+                onTryAgain={handleTryAgain}
+            />
         </>
     )
 }

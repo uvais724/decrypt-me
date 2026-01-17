@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom';
 import { supabase } from '../lib/supabaseClient';
 import { useAuth } from '../context/AuthContext';
+import { useGameRefresh } from '../context/GameRefreshContext';
 import Navbar from '../components/Navbar';
 import Loading from '../components/Loading';
 
@@ -9,6 +10,7 @@ export default function GameList() {
     const [gamesList, setGamesList] = useState([]);
     const { user } = useAuth();
     const [loading, setLoading] = useState(true);
+    const { refreshTrigger } = useGameRefresh();
 
     const difficultyBadge = (level) => {
         if (!level) return 'badge badge-neutral';
@@ -66,7 +68,7 @@ export default function GameList() {
             }
         };
         fetchAllGamesInProgress();
-    }, [user])
+    }, [user, refreshTrigger])
 
     if (loading) return <Loading />;
 
@@ -94,8 +96,8 @@ export default function GameList() {
                                 <div className="card-body">
                                     <div className="flex items-start justify-between">
                                         <div>
-                                            <h2 className="card-title">Game #{game.game_id}</h2>
-                                            <p className="text-sm text-muted">From: <span className="font-medium">{game.username}</span></p>
+                                            <h2 className="card-title">From: {game.sender}</h2>
+                                            {/* <p className="text-sm text-muted">From: <span className="font-medium">{game.sender}</span></p> */}
                                         </div>
                                         <div className="flex flex-col items-end">
                                             <span className={difficultyBadge(game.difficulty_level)}>{game.difficulty_level ?? 'Unknown'}</span>
