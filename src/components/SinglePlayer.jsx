@@ -170,14 +170,14 @@ export default function SinglePlayer() {
                                     <div className="stat-value text-primary text-2xl">
                                         {progress.single_player_levels?.prompts?.prompt_text.replace(/[^a-zA-Z]/g, '').length}
                                     </div>
-                                    <div className="stat-desc">Characters to discover</div>
+                                    {/* <div className="stat-desc">Characters to discover</div> */}
                                 </div>
                                 <div className="stat">
                                     <div className="stat-title text-neutral">Words</div>
                                     <div className="stat-value text-secondary text-2xl">
                                         {progress.single_player_levels?.prompts?.prompt_text.trim().split(/\s+/).length}
                                     </div>
-                                    <div className="stat-desc">In the cryptogram</div>
+                                    {/* <div className="stat-desc">In the cryptogram</div> */}
                                 </div>
                             </div>
                             <div className="alert alert-info">
