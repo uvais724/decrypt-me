@@ -59,8 +59,9 @@ export default function SinglePlayer() {
             }
         };
 
-        createUserProgressIfNotExist();
-        fetchLevel();
+        if(createUserProgressIfNotExist()) {
+            setTimeout(fetchLevel, 500);
+        }
     }, []);
 
     async function createAndStartGame() {
@@ -72,10 +73,10 @@ export default function SinglePlayer() {
             const fetchGame = async () => {
                 try {
                     const { data, error } = await supabase
-                        .from('games')
-                        .select('*')
-                        .eq('prompt_id', progress.single_player_levels?.prompts?.prompt_id)
-                        .eq('status', 'IN_PROGRESS')
+                        .from('game_sessions')
+                        .select('game_id')
+                        .eq('message', promptText)
+                        .eq('user_id', user.id)
                         .single();
 
                     if (data) {
@@ -147,10 +148,6 @@ export default function SinglePlayer() {
 
     if (!progress) return;
 
-    const promptPreview = progress.single_player_levels?.prompts?.prompt_text 
-        ? progress.single_player_levels.prompts.prompt_text.substring(0, 100) + (progress.single_player_levels.prompts.prompt_text.length > 100 ? '...' : '')
-        : 'Loading...';
-
     return (
         <div className="container mx-auto p-6">
             <div className="flex items-center justify-between mb-6">
@@ -164,7 +161,6 @@ export default function SinglePlayer() {
                                 <h2 className="card-title text-2xl">Level {progress.current_level}</h2>
                                 <p className="text-sm text-neutral mt-2">Continue your journey</p>
                             </div>
-                            <span className="badge badge-lg badge-primary">{progress.current_level}</span>
                         </div>
 
                         <div className="mt-4 space-y-3">
