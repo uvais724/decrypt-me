@@ -188,7 +188,7 @@ export default function SinglePlayer() {
 
                         <div className="flex flex-col sm:flex-row gap-4 items-stretch mt-6">
                             <button 
-                                className='btn btn-primary btn-lg flex-1'
+                                className='btn btn-primary btn-lg max-sm:btn-sm py-2 flex-1'
                                 onClick={async () => await createAndStartGame()}
                             >
                                 Start Level
