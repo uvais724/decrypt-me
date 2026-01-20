@@ -14,7 +14,6 @@ export default function GameEngine({
   gameId,
   message,
   session,
-  setSession,
   onTryAgain,
 }) {
   const { user } = useAuth();

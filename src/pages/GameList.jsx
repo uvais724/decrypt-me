@@ -5,6 +5,7 @@ import { useAuth } from '../context/AuthContext';
 import { useGameRefresh } from '../context/GameRefreshContext';
 import Navbar from '../components/Navbar';
 import Loading from '../components/Loading';
+import SinglePlayer from '../components/SinglePlayer';
 
 export default function GameList() {
     const [gamesList, setGamesList] = useState([]);
@@ -138,6 +139,7 @@ export default function GameList() {
                     </div>
                 )}
             </div>
+            <SinglePlayer />
         </>
     )
 }

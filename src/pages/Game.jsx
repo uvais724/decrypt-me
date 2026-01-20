@@ -124,8 +124,7 @@ export default function Game() {
                 key={childKey} 
                 gameId={gameId} 
                 message={message} 
-                session={session} 
-                setSession={setSession} 
+                session={session}
                 onTryAgain={handleTryAgain}
             />
         </>
