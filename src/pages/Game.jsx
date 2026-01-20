@@ -4,13 +4,17 @@ import { useParams } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import Loading from '../components/Loading';
 import { supabase } from '../lib/supabaseClient';
+import { useAuth } from '../context/AuthContext';
 
 export default function Game() {
     const { gameId } = useParams();
+    const { user } = useAuth();
     const [session, setSession] = useState(undefined);
     const [loading, setLoading] = useState(true);
     const [message, setMessage] = useState("");
     const [childKey, setChildKey] = useState(0);
+    const [isSinglePlayer, setIsSinglePlayer] = useState(false);
+    const [currentLevel, setCurrentLevel] = useState(null);
 
     useEffect(() => {
         setLoading(true);
@@ -29,14 +33,12 @@ export default function Game() {
 
                 if(data) {
                     setMessage(data.prompts.prompt_text.toUpperCase());
-                    setLoading(false);
                 }
 
                 if(error) throw error;
                 
             } catch (error) {
                 console.error("Error fetching game data:", error);
-                setLoading(false);
             }
         };
 
@@ -54,20 +56,65 @@ export default function Game() {
                 .single();
                 if (data) {
                     setSession(data);
-                    setLoading(false);
                 }
                 
                 if(error) throw error;
 
             } catch (error) {
                 console.error("Error loading session:", error);
-                setLoading(false);
             }
         }
 
         loadSession();
     }, []);
 
+    // Check if this is a single player game
+    useEffect(() => {
+        const checkSinglePlayerMode = async () => {
+            if (!user || !gameId) return;
+
+            try {
+                const { data, error } = await supabase
+                    .from('single_player_progress')
+                    .select(`
+                        current_level,
+                        single_player_levels!inner (
+                            level_number,
+                            prompts!inner (
+                                prompt_id
+                            )
+                        )
+                    `)
+                    .eq('user_id', user.id)
+                    .single();
+
+                if (data && data.single_player_levels?.prompts) {
+                    // Get the prompt_id for the current level
+                    const currentPromptId = data.single_player_levels.prompts.prompt_id;
+                    
+                    // Check if the game is for this prompt
+                    const { data: gameData } = await supabase
+                        .from('games')
+                        .select('prompt_id')
+                        .eq('game_id', gameId)
+                        .single();
+
+                    if (gameData && gameData.prompt_id === currentPromptId) {
+                        setIsSinglePlayer(true);
+                        setCurrentLevel(data.current_level);
+                    }
+                }
+
+                if (error && error.code !== 'PGRST116') throw error;
+            } catch (error) {
+                console.error("Error checking single player mode:", error);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        checkSinglePlayerMode();
+    }, [user, gameId]);
 
      async function handleTryAgain() {
         setLoading(true);
@@ -126,6 +173,8 @@ export default function Game() {
                 message={message} 
                 session={session}
                 onTryAgain={handleTryAgain}
+                isSinglePlayer={isSinglePlayer}
+                currentLevel={currentLevel}
             />
         </>
     )

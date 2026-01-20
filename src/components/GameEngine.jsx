@@ -15,6 +15,8 @@ export default function GameEngine({
   message,
   session,
   onTryAgain,
+  isSinglePlayer = false,
+  currentLevel = null,
 }) {
   const { user } = useAuth();
   const { triggerRefresh } = useGameRefresh();
@@ -142,10 +144,16 @@ export default function GameEngine({
 
   return (
     <div className='h-screen bg-linear-to-br from-blue-50 to-indigo-100 flex flex-col items-center justify-center'>
-
       {/* Game Board */}
-      <div className='card bg-white shadow-lg w-full sm:max-w-2xl'>
-        <div className='card-body max-h-[50vh] overflow-x-auto'>
+      <div className='bg-white shadow-lg w-full sm:max-w-2xl'>
+        {isSinglePlayer && currentLevel && (
+                <div className="bg-linear-to-r from-purple-600 to-blue-600 text-white py-4 px-6">
+                    <div className="container mx-auto flex items-center justify-center">
+                        <h1 className="text-2xl font-bold">Level {currentLevel}</h1>
+                    </div>
+                </div>
+            )}
+        <div className='max-h-[50vh] overflow-x-auto'>
           <div className='bg-gray-50 h-auto overflow-y-auto overflow-x-auto border border-gray-200'>
             <Board
               board={board}
@@ -159,8 +167,8 @@ export default function GameEngine({
       </div>
 
       {/* Controls */}
-      <div className='card h-[10vh] bg-white shadow-lg w-full sm:max-w-2xl'>
-        <div className='md:p-6'>
+      <div className='bg-white shadow-lg w-full sm:max-w-2xl'>
+        <div className='pt-3'>
           <div className='flex flex-wrap justify-center items-center gap-4'>
             <button className='max-sm:btn-xs btn btn-error btn-lg gap-2'>
               Give Up!
@@ -180,9 +188,9 @@ export default function GameEngine({
       </div>
 
       {/* Keyboard */}
-      <div className='card h-[30vh] bg-white shadow-lg w-full sm:max-w-2xl overflow-y-auto'>
-        <div className='md:p-6'>
-          <h3 className='font-bold text-gray-700 mb-2 text-center'>Keyboard</h3>
+      <div className='h-[30vh] bg-white shadow-lg w-full sm:max-w-2xl overflow-y-auto'>
+        <div className='py-3'>
+          {/* <h3 className='font-bold text-gray-700 mb-2 text-center'>Keyboard</h3> */}
           <div className='bg-gray-50 md:p-4 border border-gray-200'>
             <Keyboard
               onKey={(char) => guessLetter(activeIndex, char)}
@@ -201,6 +209,8 @@ export default function GameEngine({
           gameResult={lives === 0 ? "Game Over!" : "You Won!"}
           gamePuzzle={isGameComplete ? message : undefined}
           onTryAgain={onTryAgain}
+          isSinglePlayer={isSinglePlayer}
+          currentLevel={currentLevel}
         />
       )}
     </div>
