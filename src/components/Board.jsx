@@ -68,7 +68,7 @@ export default function Board({ board, onGuess, activeIndex, setActiveIndex, err
         return lines.map((line, lineIndex) => (
           <div key={`line-${lineIndex}`} className="flex justify-center-safe items-end mb-2 whitespace-nowrap w-full">
             {line.map((group, groupIndex) => (
-              <div key={`group-${lineIndex}-${groupIndex}`} className="flex items-end">
+              <div key={`group-${lineIndex}-${groupIndex}`} className="flex items-end mr-0.5">
                 {group.map(({ cell, index: cellIndex }) => (
                   cell.letter === " " || !/[A-Z]/.test(cell.letter) ? (
                     <span key={cellIndex} className="text-4xl px-1 mb-4">
