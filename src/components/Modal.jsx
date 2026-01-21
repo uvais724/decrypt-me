@@ -16,7 +16,8 @@ export default function Modal({ gameId, sessionId, gamePuzzle, gameResult, onTry
         if (gamePuzzle) {
             const updateGameStatus = async () => {
                 try {
-                    const { error } = await supabase
+                    if(!isSinglePlayer) {
+                        const { error } = await supabase
                         .from('games')
                         .update({
                             status: 'SOLVED',
@@ -24,7 +25,9 @@ export default function Modal({ gameId, sessionId, gamePuzzle, gameResult, onTry
                         })
                         .eq('game_id', gameId);
 
-                    if (error) throw error;
+                        if (error) throw error;
+                    }
+                    
 
                     // If single player, increment the level
                     if (isSinglePlayer && currentLevel !== null) {
@@ -64,7 +67,24 @@ export default function Modal({ gameId, sessionId, gamePuzzle, gameResult, onTry
                 setLoading(false);
             }
         };
+
+        const deleteGame = async () => {
+            try {
+                const { error } = await supabase
+                    .from('games')
+                    .delete()
+                    .eq('game_id', gameId);
+                if (error) throw error;
+            } catch (error) {
+                console.error("Error deleting game:", error);
+            }
+        };
+
         await deleteSession();
+        if(isSinglePlayer) {
+            await deleteGame();
+        }
+
         dialogRef.current?.close();
         navigate('/');
     };
