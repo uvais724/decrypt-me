@@ -9,7 +9,7 @@ export default function Keyboard({
   const keys = "QWERTYUIOPASDFGHJKLZXCVBNM".split("");
 
   return (
-    <div className="flex flex-wrap justify-center gap-2">
+    <div className="flex flex-wrap justify-center gap:2 max-sm:gap-1.5">
       {keys.map((k) => {
         const number = cryptogramNumbers?.[k];
 
