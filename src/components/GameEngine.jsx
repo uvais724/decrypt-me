@@ -36,7 +36,8 @@ export default function GameEngine({
     revealRandomCell,
     partiallyRevealedKeys,
     revealedIndices,
-    guesses
+    guesses,
+    cryptogramNumbers,
   } = useCryptogramGame(message, {
     initialState: session
   });
@@ -196,6 +197,7 @@ export default function GameEngine({
               onKey={(char) => guessLetter(activeIndex, char)}
               disabledKeys={disabledKeys}
               partiallyRevealedKeys={partiallyRevealedKeys}
+              cryptogramNumbers={cryptogramNumbers}
             />
           </div>
         </div>

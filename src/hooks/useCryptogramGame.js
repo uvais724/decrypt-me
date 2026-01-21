@@ -26,8 +26,8 @@ export function useCryptogramGame(
 
     /* ------------------ CRYPTOGRAM MAP (STABLE) ------------------ */
     const cryptogramMap = new Map(
-                Object.entries(initialState.cryptogram_map)
-            );
+        Object.entries(initialState.cryptogram_map)
+    );
 
     /* ------------------ DERIVED MAPS ------------------ */
 
@@ -41,6 +41,15 @@ export function useCryptogramGame(
         });
         return map;
     }, [chars]);
+
+    const cryptogramNumbers = useMemo(() => {
+        const obj = {};
+        cryptogramMap.forEach((value, key) => {
+            obj[key] = value;
+        });
+        return obj;
+    }, [cryptogramMap]);
+
 
     const disabledKeys = useMemo(() => {
         const revealedSet = new Set(revealedIndices);
@@ -133,12 +142,12 @@ export function useCryptogramGame(
 
         setGuesses(g => ({ ...g, [chosen.index]: chosen.letter }));
         setHintsUsed(h => h + 1);
-        
+
         const revealedChars = board.filter(
             c => ALPHABET_REGEX.test(c.letter) && c.revealed
         );
         const messageChars = message.split('').filter(c => ALPHABET_REGEX.test(c))
-        if(revealedChars.length === messageChars.length - 1) {
+        if (revealedChars.length === messageChars.length - 1) {
             setIsGameComplete(true);
         }
     }, [board, moveToNextIndex]);
@@ -171,5 +180,6 @@ export function useCryptogramGame(
         revealRandomCell,
         revealedIndices,
         guesses,
+        cryptogramNumbers,
     };
 }
