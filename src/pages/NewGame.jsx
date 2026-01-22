@@ -68,7 +68,7 @@ export default function NewGame() {
         const userId = user.id;
         const recipientId = selectedUser;
 
-        try {
+        /*try {
             const { count } = await supabase
                 .from('games')
                 .select('*', { count: 'exact', head: true })
@@ -77,7 +77,7 @@ export default function NewGame() {
             if (count > 5) {
                 setErrorMsg('You have reached the maximum number of active games. Please finish or abandon an existing game before starting a new one.');
                 throw error('Max games reached');
-            }
+            }*/
 
             const { data: prompt, error: promptError } = await supabase
                 .from('prompts')
