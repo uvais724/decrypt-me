@@ -14,6 +14,7 @@ export default function NewGame() {
     const [selectedUser, setSelectedUser] = useState('');
     const [loading, setLoading] = useState(true);
     const [message, setMessage] = useState(location.state?.message || '');
+    const [errorMsg, setErrorMsg] = useState('');
 
     useEffect(() => {
         const fetchRelatedUsers = async () => {
@@ -43,6 +44,7 @@ export default function NewGame() {
 
             } catch (error) {
                 console.error('Error fetching related users:', error);
+                setErrorMsg('Failed to load related users. Please try again later.');
                 setLoading(false);
             }
         };
@@ -66,6 +68,7 @@ export default function NewGame() {
                 .eq('status', 'IN_PROGRESS');
 
             if (count > 5) {
+                setErrorMsg('You have reached the maximum number of active games. Please finish or abandon an existing game before starting a new one.');
                 throw error('Max games reached');
             }
 
@@ -139,6 +142,9 @@ export default function NewGame() {
             navigate('/');
         } catch (error) {
             console.error(error);
+            if(!errorMsg) {
+                setErrorMsg('Failed to create a new game. Please try again later.');
+            }
             setLoading(false);
         }
     }
@@ -156,6 +162,12 @@ export default function NewGame() {
                         <p className="text-sm text-neutral">No Friends ? Click on below invite button</p>
                         <button type="button" className="btn btn-primary" onClick={() => navigate('/send-invite')}>Invite</button>
                         <form onSubmit={onsubmit} className="form-control mt-4">
+                            {errorMsg && (
+                                <div className="alert alert-error shadow-lg">
+                                <span>{errorMsg}</span>
+                                </div>
+                            )}
+
                             <label htmlFor="User" className="label">
                                 <span className="label-text">Send to</span>
                             </label>

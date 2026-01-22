@@ -10,6 +10,7 @@ export default function SendInvite() {
   const [checkUserFlag, setCheckUserFlag] = useState(null);
   const [relationshipType, setRelationshipType] = useState('');
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
   const {user} = useAuth();
 
@@ -36,6 +37,7 @@ export default function SendInvite() {
 
     } catch (err) {
       console.error('Invite error:', err.message);
+      setError('Failed to send invite. Please try again later.');
     } finally {
       setLoading(false);
     } 
@@ -60,6 +62,7 @@ export default function SendInvite() {
        if(error) throw error;
     } catch(err) {
       console.error('Error while checking user: ', err);
+      setError('Something went wrong while checking the user. Please try again later.');
     }
   };
 
@@ -70,7 +73,11 @@ export default function SendInvite() {
         <div className="card w-full max-w-md bg-base-100 shadow-xl">
           <div className="card-body">
             <h2 className="card-title text-2xl">Send Invite</h2>
-
+            {error && (
+                <div className="alert alert-error shadow-lg">
+                  <span>{error}</span>
+                </div>
+            )}
             <div className="flex gap-2">
               <input
                 className="input input-bordered"
