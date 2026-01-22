@@ -68,8 +68,8 @@ export default function NewGame() {
         const userId = user.id;
         const recipientId = selectedUser;
 
-        /*try {
-            const { count } = await supabase
+        try {
+            /*const { count } = await supabase
                 .from('games')
                 .select('*', { count: 'exact', head: true })
                 .eq('status', 'IN_PROGRESS');
