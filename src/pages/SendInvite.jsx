@@ -19,6 +19,20 @@ export default function SendInvite() {
 
     setLoading(true);
     try {
+      //check if the invitation already exists
+      const { data: existingInvite, error: existingInviteError } = await supabase
+        .from('relationship_invites')
+        .select('*')
+        .eq('inviter_id', user.id)
+        .eq('invitee_id', checkUser.user_id)
+        .single();
+      
+      if(existingInvite) {
+        setError('An invite to this user already exists.');
+        setLoading(false);
+        return;
+      }
+
       const { data: inviteData, error: inviteError } = await supabase
       .from('relationship_invites')
       .insert({
