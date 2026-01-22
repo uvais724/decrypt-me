@@ -5,10 +5,12 @@ import Board from "./Board";
 import Keyboard from "./Keyboard";
 import Lives from "./Lives";
 import Modal from "./Modal";
+import ConfirmationModal from "./ConfirmationModal";
 import { supabase } from '../lib/supabaseClient';
 import { useAuth } from '../context/AuthContext';
 import { useGameRefresh } from '../context/GameRefreshContext';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 export default function GameEngine({
   gameId,
@@ -19,7 +21,9 @@ export default function GameEngine({
   currentLevel = null,
 }) {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const { triggerRefresh } = useGameRefresh();
+  const [showGiveUpModal, setShowGiveUpModal] = useState(false);
   // 🔹 Holds latest serialized game state
   const latestStateRef = useRef(null);
 
@@ -143,8 +147,50 @@ export default function GameEngine({
     revealRandomCell();
   };
 
+  const handleGiveUp = () => {
+    setShowGiveUpModal(true);
+  };
+
+  const confirmGiveUp = async () => {
+    setShowGiveUpModal(false);
+    
+    const {error: deleteSessionError} = await supabase
+      .from('game_sessions')
+      .delete()
+      .eq('game_id', gameId);
+    
+    if(deleteSessionError) {
+      console.error("Error deleting game session: ", deleteSessionError);
+      return;
+    }
+
+    const {error} = await supabase
+      .from('games')
+      .update({
+        status: 'GAVE_UP'
+      })
+      .eq('game_id', gameId);
+    
+    if (error) {
+      console.error("Error giving up the game: ", error);
+    } else {
+      navigate('/');
+    }
+  };
+
   return (
     <div className='h-screen bg-linear-to-br from-blue-50 to-indigo-100 flex flex-col items-center justify-center'>
+      {/* Confirmation Modal */}
+      <ConfirmationModal
+        isOpen={showGiveUpModal}
+        title="Give Up?"
+        message="Are you sure you want to give up? Your progress will be lost."
+        confirmText="Yes, Give Up"
+        cancelText="No, Continue"
+        onConfirm={confirmGiveUp}
+        onCancel={() => setShowGiveUpModal(false)}
+      />
+
       {/* Game Board */}
       <div className='bg-white shadow-lg w-full sm:max-w-2xl'>
         {isSinglePlayer && currentLevel && (
@@ -171,7 +217,7 @@ export default function GameEngine({
       <div className='bg-white shadow-lg w-full sm:max-w-2xl'>
         <div className='pt-3'>
           <div className='flex flex-wrap justify-center items-center gap-4'>
-            <button className='max-sm:btn-xs btn btn-error btn-lg gap-2'>
+            <button className='max-sm:btn-xs btn btn-error btn-lg gap-2' onClick={handleGiveUp}>
               Give Up!
             </button>
 
