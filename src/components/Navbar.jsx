@@ -56,6 +56,7 @@ export default function Navbar() {
                     <Link to="/invite" className="btn btn-ghost justify-start">Invite</Link>
                     <Link to="/send-invite" className="btn btn-ghost justify-start">Send Invite</Link>
                     <Link to="/new-game" className="btn btn-ghost justify-start">New Game</Link>
+                    <Link to="/curated-packs" className="btn btn-ghost justify-start">Curated Packs</Link>
                 </nav>
             </aside>
         </>

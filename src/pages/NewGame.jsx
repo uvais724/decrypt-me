@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import Navbar from '../components/Navbar';
 import Loading from '../components/Loading';
@@ -9,9 +9,11 @@ import { setDifficultyLevel, generateCryptogramMap, pickRandomIndices, initializ
 export default function NewGame() {
     const { user } = useAuth();
     const navigate = useNavigate();
+    const location = useLocation();
     const [relatedUsers, setRelatedUsers] = useState([]);
     const [selectedUser, setSelectedUser] = useState('');
     const [loading, setLoading] = useState(true);
+    const [message, setMessage] = useState(location.state?.message || '');
 
     useEffect(() => {
         const fetchRelatedUsers = async () => {
@@ -185,6 +187,8 @@ export default function NewGame() {
                                 type="text"
                                 placeholder="Type your prompt..."
                                 className="textarea w-full h-[30vh]"
+                                value={message}
+                                onChange={(e) => setMessage(e.target.value)}
                                 required
                             />
 

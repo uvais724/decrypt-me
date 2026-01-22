@@ -10,6 +10,7 @@ import ProtectedRoute from './router/ProtectedRoute';
 import Login from "./pages/Login";
 import SendInvite from "./pages/SendInvite";
 import Invite from "./pages/Invite";
+import CuratedPacks from "./pages/CuratedPacks";
 
 export default function App() {
 
@@ -26,6 +27,7 @@ export default function App() {
               <Route path="/new-game" element={<NewGame />} />
               <Route path="/invite" element={<Invite />} />
               <Route path="/send-invite" element={<SendInvite />} />
+              <Route path="/curated-packs" element={<CuratedPacks />} />
             </Route>
           </Routes>
         </GameRefreshProvider>
