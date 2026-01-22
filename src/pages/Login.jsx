@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import HowToPlay from '../components/HowToPlay';
 
 export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showHowToPlay, setShowHowToPlay] = useState(false);
 
   const navigate = useNavigate();
   const { login } = useAuth();
@@ -29,12 +31,22 @@ export default function Login() {
 
   return (
     <div className="min-h-screen bg-linear-to-br from-blue-600 to-blue-800 flex items-center justify-center p-4">
+      <HowToPlay isOpen={showHowToPlay} onClose={() => setShowHowToPlay(false)} />
       <div className="w-full max-w-md">
         <div className="card bg-base-100 shadow-2xl">
           <div className="card-body">
-            <h1 className="card-title text-3xl font-bold text-center mb-2">
-              Decrypt Me
-            </h1>
+            <div className="flex items-center justify-between mb-4">
+              <h1 className="card-title text-3xl font-bold">
+                Decrypt Me
+              </h1>
+              <button
+                type="button"
+                onClick={() => setShowHowToPlay(true)}
+                className="btn btn-ghost btn-sm text-sm"
+              >
+                How to Play ?
+              </button>
+            </div>
 
             <form onSubmit={handleSubmit} className="space-y-4">
               {/* Error */}
