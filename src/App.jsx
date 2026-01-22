@@ -11,6 +11,7 @@ import Login from "./pages/Login";
 import SendInvite from "./pages/SendInvite";
 import Invite from "./pages/Invite";
 import CuratedPacks from "./pages/CuratedPacks";
+import AuthCallback from "./pages/AuthCallback";
 
 export default function App() {
 
@@ -20,6 +21,7 @@ export default function App() {
         <GameRefreshProvider>
           <Routes>
             <Route path="/login" element={<Login />} />
+            <Route path="/auth/callback" element={<AuthCallback />} />
             {/* Protected Routes */}
             <Route element={<ProtectedRoute />}>
               <Route path="/" element={<GameList />} />
