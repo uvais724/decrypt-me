@@ -57,7 +57,14 @@ export default function NewGame() {
     const onsubmit = async (e) => {
         e.preventDefault();
         setLoading(true);
-        const promptText = e.target.Message.value.toUpperCase();
+        const promptText = e.target.Message.value.toUpperCase().trim();
+        const alphabetsMatch = promptText.match(/[A-Z]/g) || [];
+        if(alphabetsMatch.length < 10) {
+            setErrorMsg('Prompt must be at least 10 alphabetic characters long.');
+            setLoading(false);
+            return;
+        }
+
         const userId = user.id;
         const recipientId = selectedUser;
 
