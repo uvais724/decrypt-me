@@ -40,10 +40,10 @@ export default function Login() {
         provider: 'google',
         options: {
           redirectTo: `${window.location.origin}/auth/callback`,
-          queryParams: {
-            access_type: 'offline',
-            prompt: 'consent',
-          },
+          // queryParams: {
+          //   access_type: 'offline',
+          //   prompt: 'consent',
+          // },
         },
       });
 

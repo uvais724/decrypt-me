@@ -56,6 +56,12 @@ export default function NewGame() {
 
     const onsubmit = async (e) => {
         e.preventDefault();
+
+        if(!selectedUser) {
+            setErrorMsg('Please select a user to send the game to.');
+            return;
+        }
+
         setErrorMsg(null);
         setLoading(true);
         const promptText = e.target.Message.value.toUpperCase().trim();
