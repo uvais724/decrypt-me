@@ -13,6 +13,14 @@ export default function Modal({ gameId, sessionId, gamePuzzle, gameResult, onTry
 
     useEffect(() => {
         dialogRef.current?.showModal();
+        
+        // Prevent closing when clicking outside the modal
+        const handleCancel = (e) => {
+            e.preventDefault();
+        };
+        
+        dialogRef.current?.addEventListener('cancel', handleCancel);
+
         if (gamePuzzle) {
             const updateGameStatus = async () => {
                 try {
@@ -47,6 +55,10 @@ export default function Modal({ gameId, sessionId, gamePuzzle, gameResult, onTry
             };
             updateGameStatus();
         }
+
+        return () => {
+            dialogRef.current?.removeEventListener('cancel', handleCancel);
+        };
     }, []);
 
     const handleClose = async () => {
