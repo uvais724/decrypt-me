@@ -214,7 +214,7 @@ export default function GameEngine({
       <div className='bg-white shadow-lg w-full sm:max-w-2xl'>
         <div className='pt-3'>
           <div className='flex flex-wrap justify-center items-center gap-4'>
-            <button className='max-sm:btn-xs btn btn-error btn-lg gap-2' onClick={handleGiveUp}>
+            <button className='max-sm:btn-xs btn btn-error btn-lg gap-2' onClick={handleGiveUp} disabled={isSinglePlayer}>
               Give Up!
             </button>
 
