@@ -123,7 +123,7 @@ export default function SendInvite() {
             <div className="flex gap-2">
               <input
                 className="input input-bordered"
-                placeholder="Invitee username"
+                placeholder="Invitee email"
                 value={username}
                 onChange={e => setUsername(e.target.value)}
               />
