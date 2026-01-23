@@ -79,6 +79,14 @@ export default function Invites() {
       if(insertErr) throw insertErr;
 
       setInvites(prev => prev.filter(i => i.invite_id !== inviteId));
+      
+      const {error: deleteInviteErr } = await supabase
+        .from('relationship_invites')
+        .delete()
+        .eq('invite_id', invite.invite_id);
+
+        if(deleteInviteErr) throw deleteInviteErr;
+
     } catch (err) {
       console.error('Failed to accept invite', err);
     }
@@ -103,6 +111,14 @@ export default function Invites() {
       if(error) throw error;
 
       setInvites(prev => prev.filter(i => i.invite_id !== inviteId));
+      
+      const {error: deleteInviteErr } = await supabase
+        .from('relationship_invites')
+        .delete()
+        .eq('invite_id', invite.invite_id);
+
+      if(deleteInviteErr) throw deleteInviteErr;
+
     } catch (err) {
       console.error('Failed to reject invite', err);
     }
