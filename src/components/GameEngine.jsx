@@ -59,7 +59,6 @@ export default function GameEngine({
       message
     };
     setActiveIndex(activeIndex);
-    console.log('Latest state ref: ', latestStateRef.current);
   }, [
     lives,
     hintsUsed,
@@ -88,8 +87,6 @@ export default function GameEngine({
     const payload = { ...latestStateRef.current };
 
     try {
-      console.log("Persisting session:", payload);
-
       const { data, error } = await supabase
       .from('game_sessions')
       .update({

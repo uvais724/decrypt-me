@@ -26,7 +26,7 @@ export default function Cell({ cell, isActive, onGuess, onFocus, isError }) {
         ${isError ? "border-red-500": ""}`}
         disabled={cell.revealed}
         maxLength={1}
-        value={cell.revealed ? cell.letter : undefined}
+        value={cell.revealed ? cell.letter : ""}
         onFocus={onFocus}
         onClick={onFocus}
         onChange={(e) =>
