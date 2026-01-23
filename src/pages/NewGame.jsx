@@ -56,105 +56,51 @@ export default function NewGame() {
 
     const onsubmit = async (e) => {
         e.preventDefault();
+        setErrorMsg(null);
         setLoading(true);
         const promptText = e.target.Message.value.toUpperCase().trim();
         const alphabetsMatch = promptText.match(/[A-Z]/g) || [];
-        if(alphabetsMatch.length < 10) {
+        if (alphabetsMatch.length < 10) {
             setErrorMsg('Prompt must be at least 10 alphabetic characters long.');
             setLoading(false);
             return;
         }
 
-        const userId = user.id;
-        const recipientId = selectedUser;
-
         try {
-            /*const { count } = await supabase
-                .from('games')
-                .select('*', { count: 'exact', head: true })
-                .eq('status', 'IN_PROGRESS');
-
-            if (count > 5) {
-                setErrorMsg('You have reached the maximum number of active games. Please finish or abandon an existing game before starting a new one.');
-                throw error('Max games reached');
-            }*/
-
-            const { data: prompt, error: promptError } = await supabase
-                .from('prompts')
-                .insert({
-                    sender_id: userId,
-                    receiver_id: recipientId,
-                    prompt_text: promptText,
-                    type: 'custom'
-                })
-                .select()
-                .single();
-
-            if (promptError) throw promptError
-
             const difficulty = setDifficultyLevel(promptText);
-
-            const { data: game, error: gameError } = await supabase
-                .from('games')
-                .insert({
-                    prompt_id: prompt.prompt_id,
-                    difficulty_level: difficulty
-                })
-                .select()
-                .single();
-
-            if (gameError) {
-                await supabase.from('prompts').delete().eq('prompt_id', prompt.prompt_id);
-                throw gameError;
-            }
-
-            //Created game session  
-            const gameId = await game.game_id;
-            const message = promptText.toUpperCase();
             const cryptogramMap = generateCryptogramMap(promptText);
-            let revealedCharCount = 3;
-            if (difficulty === 'medium') {
-                revealedCharCount = 5;
-            } else if (difficulty === 'hard') {
-                revealedCharCount = 8;
-            }
+            let revealedCharCount = difficulty === 'medium' ? 5 : difficulty === 'hard' ? 8 : 3;
 
-            const chars = message.split("");
+            const chars = promptText.split("");
             const revealedIndices = pickRandomIndices(chars, revealedCharCount);
-            const initialRevealedIndices = revealedIndices;
-            const guesses = initializeGuesses(cryptogramMap, revealedIndices, message);
+            const guesses = initializeGuesses(cryptogramMap, revealedIndices, promptText);
             const activeIndex = findFirstUnrevealed(chars, revealedIndices);
 
+            // Single RPC call - atomic transaction
+            const { data, error } = await supabase.rpc('create_new_game', {
+                p_sender_id: user.id,
+                p_receiver_id: selectedUser,
+                p_prompt_text: promptText,
+                p_difficulty_level: difficulty,
+                p_cryptogram_map: cryptogramMap,
+                p_revealed_indices: revealedIndices,
+                p_initial_revealed: revealedIndices,
+                p_guesses: guesses,
+                p_active_index: activeIndex
+            });
 
-            const { error } = await supabase
-                .from('game_sessions')
-                .insert({
-                    game_id: gameId,
-                    user_id: recipientId,
-                    message,
-                    cryptogram_map: cryptogramMap,
-                    guesses,
-                    revealed_indices: revealedIndices,
-                    initial_revealed: initialRevealedIndices,
-                    active_index: activeIndex,
-                });
+            if (error) throw error;
 
-            if (error) {
-                await supabase.from('prompts').delete().eq('prompt_id', prompt.prompt_id);
-                await supabase.from('games').delete().eq('game_id', gameId);
-                throw error;
-            }
+            if(data) console.log('New game created with ID:', data);
 
             setLoading(false);
             navigate('/');
         } catch (error) {
             console.error(error);
-            if(!errorMsg) {
-                setErrorMsg('Failed to create a new game. Please try again later.');
-            }
+            setErrorMsg('Failed to create a new game. Please try again later.');
             setLoading(false);
         }
-    }
+    };
 
     if (loading) return <Loading />;
 
@@ -171,7 +117,7 @@ export default function NewGame() {
                         <form onSubmit={onsubmit} className="form-control mt-4">
                             {errorMsg && (
                                 <div className="alert alert-error shadow-lg">
-                                <span>{errorMsg}</span>
+                                    <span>{errorMsg}</span>
                                 </div>
                             )}
 

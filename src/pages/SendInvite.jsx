@@ -20,15 +20,21 @@ export default function SendInvite() {
     setLoading(true);
     try {
       //check if the invitation already exists
-      const { data: existingInvite, error: existingInviteError } = await supabase
-        .from('relationship_invites')
-        .select('*')
-        .eq('inviter_id', user.id)
-        .eq('invitee_id', checkUser.user_id)
-        .single();
-      
-      if(existingInvite) {
-        setError('An invite to this user already exists.');
+      const userId = user.id;
+
+      const { count, error:checkError } = await supabase
+        .from('user_relationships')
+        .select('*', { count: 'exact', head: true })
+        .or(
+          `and(user_id.eq.${userId},status.eq.ACCEPTED),and(related_user_id.eq.${userId},status.eq.ACCEPTED)`
+        );
+
+      if (checkError) {
+        throw checkError;
+      } 
+
+      if(count >= 1) {
+        setError('You already have an accepted relationship. Cannot send more invites.');
         setLoading(false);
         return;
       }
