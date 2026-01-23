@@ -25,6 +25,10 @@ export default function GameList() {
 
     useEffect(() => {
         if (!user) return;
+        
+        // Set loading to true when refresh is triggered
+        setLoading(true);
+        
         const fetchAllGamesInProgress = async () => {
             try {
                 const { data, error } = await supabase
@@ -47,6 +51,7 @@ export default function GameList() {
                 .eq('prompts.receiver_id', user.id)
                 .eq('status', 'IN_PROGRESS');
 
+                if(error) throw error;
                     
                 if(data) {
                     const gamesData =  data.map(g => ({
@@ -61,10 +66,9 @@ export default function GameList() {
                     console.log(gamesData);
                     setGamesList(gamesData);
                 }
-                setLoading(false);
-                if(error) throw error;
             } catch (error) {
                 console.error("Error fetching all games:", error);
+            } finally {
                 setLoading(false);
             }
         };
@@ -130,7 +134,7 @@ export default function GameList() {
 
                                     <div className="card-actions justify-end mt-2">
                                         <Link to={`/${game.game_id}`} state={{ gameId: game.game_id }}>
-                                            <button className="btn btn-primary btn-sm">Play</button>
+                                            <button className="btn btn-primary btn-sm" disabled={loading}>Play</button>
                                         </Link>
                                     </div>
                                 </div>
