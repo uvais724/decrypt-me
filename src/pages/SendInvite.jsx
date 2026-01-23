@@ -114,6 +114,10 @@ export default function SendInvite() {
       <div className="flex justify-center mt-8">
         <div className="card w-full max-w-md bg-base-100 shadow-xl">
           <div className="card-body">
+            <div className="alert alert-info shadow-lg">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" className="w-6 h-6 mx-2 stroke-current"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+              <span>The user can only accept invites if they have an account.</span>
+            </div>
             <h2 className="card-title text-2xl">Send Invite</h2>
             {error && (
                 <div className="alert alert-error shadow-lg">
