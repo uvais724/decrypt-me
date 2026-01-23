@@ -26,7 +26,7 @@ export default function SendInvite() {
         .from('user_relationships')
         .select('*', { count: 'exact', head: true })
         .or(
-          `and(user_id.eq.${userId},status.eq.ACCEPTED),and(related_user_id.eq.${userId},status.eq.ACCEPTED)`
+          `and(user_id.eq.${userId},related_user_id.eq.${checkUser.user_id},status.eq.ACCEPTED),and(user_id.eq.${checkUser.user_id},related_user_id.eq.${userId},status.eq.ACCEPTED)`
         );
 
       if (checkError) {
@@ -35,6 +35,24 @@ export default function SendInvite() {
 
       if(count >= 1) {
         setError('You already have an accepted relationship. Cannot send more invites.');
+        setLoading(false);
+        return;
+      }
+
+      const {data: invitesData, error: invitesError } = await supabase
+        .from('relationship_invites')
+        .select('*');
+      if (invitesError) {
+        throw invitesError;
+      }
+
+      const existingInvite = invitesData.find(invite => 
+        (invite.inviter_id === user.id && invite.invitee_id === checkUser.user_id && invite.status === 'PENDING') ||
+        (invite.inviter_id === checkUser.user_id && invite.invitee_id === user.id && invite.status === 'PENDING')
+      );
+
+      if(existingInvite) {
+        setError('An invite is already pending between you and this user.');
         setLoading(false);
         return;
       }
@@ -51,6 +69,10 @@ export default function SendInvite() {
       
       if(inviteData) {
         alert('Invite send successfully!');
+        setUsername('');
+        setRelationshipType('');
+        setCheckUser(false);
+        setCheckUserFlag(null);
       }
 
       if(inviteError) throw error;
