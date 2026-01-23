@@ -136,21 +136,21 @@ export function useCryptogramGame(
 
         setRevealedIndices(prev => {
             const next = [...prev, chosen.index];
-            setActiveIndex(moveToNextIndex(chosen.index, next));
+            // Move to NEXT unrevealed cell, not the revealed one
+            const nextIndex = moveToNextIndex(chosen.index, next);
+            setActiveIndex(nextIndex);
+
+            // Check for game completion
+            if (next.length === totalLetters) {
+                setIsGameComplete(true);
+            }
+
             return next;
         });
 
         setGuesses(g => ({ ...g, [chosen.index]: chosen.letter }));
         setHintsUsed(h => h + 1);
-
-        const revealedChars = board.filter(
-            c => ALPHABET_REGEX.test(c.letter) && c.revealed
-        );
-        const messageChars = message.split('').filter(c => ALPHABET_REGEX.test(c))
-        if (revealedChars.length === messageChars.length - 1) {
-            setIsGameComplete(true);
-        }
-    }, [board, moveToNextIndex]);
+    }, [board, moveToNextIndex, totalLetters]);
 
     /* ------------------ KEYBOARD INPUT ------------------ */
 
