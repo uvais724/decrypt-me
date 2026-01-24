@@ -7,11 +7,31 @@ import Navbar from '../components/Navbar';
 import Loading from '../components/Loading';
 import SinglePlayer from '../components/SinglePlayer';
 
+const styles = `
+  @keyframes fadeOut {
+    0% {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    100% {
+      opacity: 0;
+      transform: translateY(-20px);
+    }
+  }
+  
+  .notification-fade-out {
+    animation: fadeOut 0.5s ease-in-out forwards;
+  }
+`;
+
 export default function GameList() {
     const [gamesList, setGamesList] = useState([]);
     const { user } = useAuth();
     const [loading, setLoading] = useState(true);
     const { refreshTrigger } = useGameRefresh();
+    const [pendingInvites, setPendingInvites] = useState(0);
+    const [showNotification, setShowNotification] = useState(false);
+    const [fadeOut, setFadeOut] = useState(false);
 
     const difficultyBadge = (level) => {
         if (!level) return 'badge badge-neutral';
@@ -72,14 +92,64 @@ export default function GameList() {
                 setLoading(false);
             }
         };
+
+        const fetchPendingInvites = async () => {
+            try {
+                const { data, error } = await supabase
+                .from('relationship_invites')
+                 .select('*', { count: 'exact' })
+                .eq('invitee_id', user.id)
+                .eq('status', 'PENDING');
+
+                if (error) throw error;
+                const inviteCount = data.length;
+                setPendingInvites(inviteCount);
+                
+                // Show notification if there are pending invites
+                if (inviteCount > 0) {
+                    setShowNotification(true);
+                    setFadeOut(false);
+                }
+            } catch (error) {
+                console.error("Error fetching pending invites:", error);
+            }
+        };
+
         fetchAllGamesInProgress();
+        fetchPendingInvites();
     }, [user, refreshTrigger])
+
+    // Auto-hide notification after 5 seconds
+    useEffect(() => {
+        if (showNotification && !fadeOut) {
+            const timer = setTimeout(() => {
+                setFadeOut(true);
+                setTimeout(() => {
+                    setShowNotification(false);
+                }, 500); // Wait for fade animation to complete
+            }, 5000);
+            return () => clearTimeout(timer);
+        }
+    }, [showNotification, fadeOut]);
 
     if (loading) return <Loading />;
 
     return (
         <>
+            <style>{styles}</style>
             <Navbar />
+            {showNotification && (
+                <div className={`fixed top-0 left-0 right-0 z-50 ${fadeOut ? 'notification-fade-out' : ''}`}>
+                    <div className="bg-info text-info-content px-6 py-4 shadow-lg">
+                        <div className="container mx-auto flex items-center justify-between">
+                            <span className="font-semibold">You have {pendingInvites} pending {pendingInvites === 1 ? 'invite' : 'invites'}!</span>
+                            <Link to="/invite" className="underline font-semibold hover:opacity-80">
+                                View Invites
+                            </Link>
+                        </div>
+                    </div>
+                </div>
+            )}
             <div className="container mx-auto p-6">
                 <div className="flex items-center justify-between mb-6">
                     <h1 className="text-3xl font-extrabold">Games In Progress</h1>

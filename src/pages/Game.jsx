@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import GameEngine from '../components/GameEngine';
 import { useParams } from 'react-router-dom';
 import Navbar from '../components/Navbar';
@@ -15,6 +15,7 @@ export default function Game() {
     const [childKey, setChildKey] = useState(0);
     const [isSinglePlayer, setIsSinglePlayer] = useState(false);
     const [currentLevel, setCurrentLevel] = useState(null);
+    const containerRef = useRef(null);
 
     useEffect(() => {
         setLoading(true);
@@ -115,6 +116,18 @@ export default function Game() {
 
         checkSinglePlayerMode();
     }, [user, gameId]);
+
+    // Scroll to bottom when game is loaded
+    useEffect(() => {
+        if (!loading && session) {
+            // Use requestAnimationFrame to ensure DOM is fully rendered
+            requestAnimationFrame(() => {
+                setTimeout(() => {
+                    window.scrollTo(0, document.documentElement.scrollHeight);
+                }, 100);
+            });
+        }
+    }, [loading, session]);
 
      async function handleTryAgain() {
         setLoading(true);
