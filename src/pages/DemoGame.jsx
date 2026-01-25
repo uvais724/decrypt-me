@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react'
 import GameEngine from '../components/GameEngine';
-import Navbar from '../components/Navbar';
 import Loading from '../components/Loading';
 
 export default function DemoGame() {
@@ -9,7 +8,7 @@ export default function DemoGame() {
 
     // Static message for demo
     const DEMO_MESSAGE = "THE QUICK BROWN FOX JUMPS OVER THE LAZY DOG";
-    
+
     // Create a mock session object for demo mode
     const mockSession = {
         session_id: 'demo-session',
@@ -68,16 +67,13 @@ export default function DemoGame() {
     }
 
     return (
-        <>
-            <Navbar />
-            <GameEngine 
-                key={childKey} 
-                gameId="demo-game" 
-                message={DEMO_MESSAGE} 
-                onTryAgain={handleTryAgain}
-                session={mockSession}
-                isDemo={true}
-            />
-        </>
+        <GameEngine
+            key={childKey}
+            gameId="demo-game"
+            message={DEMO_MESSAGE}
+            onTryAgain={handleTryAgain}
+            session={mockSession}
+            isDemo={true}
+        />
     )
 }
