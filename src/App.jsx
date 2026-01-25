@@ -3,6 +3,7 @@
 import GameList from "./pages/GameList";
 import Game from "./pages/Game";
 import NewGame from "./pages/NewGame";
+import DemoGame from "./pages/DemoGame";
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import { GameRefreshProvider } from './context/GameRefreshContext';
@@ -21,6 +22,7 @@ export default function App() {
         <GameRefreshProvider>
           <Routes>
             <Route path="/login" element={<Login />} />
+            <Route path="/demo-game" element={<DemoGame />} />
             <Route path="/auth/callback" element={<AuthCallback />} />
             {/* Protected Routes */}
             <Route element={<ProtectedRoute />}>

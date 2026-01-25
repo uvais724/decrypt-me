@@ -19,6 +19,7 @@ export default function GameEngine({
   onTryAgain,
   isSinglePlayer = false,
   currentLevel = null,
+  isDemo = false,
 }) {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -73,6 +74,9 @@ export default function GameEngine({
   const lastSavedStateRef = useRef(null);
 
   async function persistData() {
+    // Skip persistence in demo mode
+    if (isDemo) return;
+
     // 1. Check if state exists
     if (!latestStateRef.current) return;
 
@@ -177,6 +181,18 @@ export default function GameEngine({
 
   return (
     <div className='h-screen bg-linear-to-br from-blue-50 to-indigo-100 flex flex-col items-center justify-center'>
+      {/* Back Button for Demo Mode */}
+      {isDemo && (
+        <div className='w-full sm:max-w-2xl bg-white shadow-lg p-3 flex justify-start'>
+          <button 
+            className='btn btn-ghost btn-sm'
+            onClick={() => navigate('/login')}
+          >
+            ← Back to Login
+          </button>
+        </div>
+      )}
+
       {/* Confirmation Modal */}
       <ConfirmationModal
         isOpen={showGiveUpModal}
@@ -214,7 +230,7 @@ export default function GameEngine({
       <div className='bg-white shadow-lg w-full sm:max-w-2xl'>
         <div className='pt-3'>
           <div className='flex flex-wrap justify-center items-center gap-4'>
-            <button className='max-sm:btn-xs btn btn-error btn-lg gap-2' onClick={handleGiveUp} disabled={isSinglePlayer}>
+            <button className='max-sm:btn-xs btn btn-error btn-lg gap-2' onClick={handleGiveUp} disabled={isSinglePlayer || isDemo}>
               Give Up!
             </button>
 
@@ -256,6 +272,7 @@ export default function GameEngine({
           onTryAgain={onTryAgain}
           isSinglePlayer={isSinglePlayer}
           currentLevel={currentLevel}
+          isDemo={isDemo}
         />
       )}
     </div>

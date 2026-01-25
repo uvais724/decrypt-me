@@ -31,11 +31,15 @@ export default function Login() {
     }
   };
 
+  const handleTryNow = () => {
+    navigate('/demo-game');
+  };
+
   const signInWithGoogle = async () => {
     try {
       setGoogleLoading(true);
       setError('');
-      
+
       const { data, error: oauthError } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
@@ -85,6 +89,16 @@ export default function Login() {
                 How to Play ?
               </button>
             </div>
+
+            {/* Try Now Button */}
+            <button
+              type="button"
+              className="btn btn-accent w-full"
+              onClick={handleTryNow}
+              disabled={loading || googleLoading}
+            >
+              Try Now
+            </button>
 
             <form onSubmit={handleSubmit} className="space-y-4">
               {/* Error */}
@@ -144,9 +158,9 @@ export default function Login() {
             </form>
 
             {/* Google Login */}
-            <button 
+            <button
               type="button"
-              className="btn bg-white text-black border-[#e5e5e5] w-full disabled:opacity-50" 
+              className="btn bg-white text-black border-[#e5e5e5] w-full disabled:opacity-50"
               onClick={signInWithGoogle}
               disabled={loading || googleLoading}
             >
@@ -162,7 +176,6 @@ export default function Login() {
                 </>
               )}
             </button>
-
           </div>
         </div>
       </div>

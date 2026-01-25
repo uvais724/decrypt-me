@@ -4,7 +4,7 @@ import { supabase } from '../lib/supabaseClient';
 import { useAuth } from '../context/AuthContext';
 import { useGameRefresh } from '../context/GameRefreshContext';
 
-export default function Modal({ gameId, sessionId, gamePuzzle, gameResult, onTryAgain, isSinglePlayer = false, currentLevel = null }) {
+export default function Modal({ gameId, sessionId, gamePuzzle, gameResult, onTryAgain, isSinglePlayer = false, currentLevel = null, isDemo = false }) {
     const dialogRef = useRef(null);
     const [loading, setLoading] = useState(true);
     const navigate = useNavigate();
@@ -62,6 +62,12 @@ export default function Modal({ gameId, sessionId, gamePuzzle, gameResult, onTry
     }, []);
 
     const handleClose = async () => {
+        // In demo mode, just navigate back to login
+        if (isDemo) {
+            navigate('/login');
+            return;
+        }
+
         const deleteSession = async () => {
             try {
                 const { error } = await supabase
