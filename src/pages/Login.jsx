@@ -25,7 +25,11 @@ export default function Login() {
       navigate('/');
     } catch (err) {
       // Supabase errors come with a message property
-      setError(err.message || 'Invalid email or password');
+      if(err.message === 'Email not confirmed') {
+        setError('Go to your email inbox to confirm your account before logging in.');
+      } else {
+        setError(err.message || 'Invalid email or password');
+      }
     } finally {
       setLoading(false);
     }
@@ -152,7 +156,7 @@ export default function Login() {
                     Logging in...
                   </>
                 ) : (
-                  'Login'
+                  'Sign in | Sign Up'
                 )}
               </button>
             </form>
