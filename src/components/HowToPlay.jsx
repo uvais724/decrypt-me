@@ -43,19 +43,23 @@ export default function HowToPlay({ isOpen, onClose }) {
               <p className="text-base-content/80 ml-4">You'll see a message where each letter is replaced with another letter.</p>
             </div>
             <div>
-              <p className="font-semibold text-base-content">2. Reveal Letters</p>
+              <p className="font-semibold text-base-content">2. Number association</p>
+              <p className="text-base-content/80 ml-4">You'll see each letter is associated with a number which helps you identify the letter.</p>
+            </div>
+            <div>
+              <p className="font-semibold text-base-content">3. Reveal Letters</p>
               <p className="text-base-content/80 ml-4">Some letters are revealed to give you hints and help you start solving.</p>
             </div>
             <div>
-              <p className="font-semibold text-base-content">3. Make Guesses</p>
+              <p className="font-semibold text-base-content">4. Make Guesses</p>
               <p className="text-base-content/80 ml-4">Click on letters and use the keyboard to guess what each letter represents.</p>
             </div>
             <div>
-              <p className="font-semibold text-base-content">4. Decode the Message</p>
+              <p className="font-semibold text-base-content">5. Decode the Message</p>
               <p className="text-base-content/80 ml-4">Figure out the complete substitution pattern to reveal the secret message.</p>
             </div>
             <div>
-              <p className="font-semibold text-base-content">5. Win the Game</p>
+              <p className="font-semibold text-base-content">6. Win the Game</p>
               <p className="text-base-content/80 ml-4">Successfully decode the entire message to win!</p>
             </div>
           </div>

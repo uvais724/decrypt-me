@@ -57,7 +57,7 @@ export default function NewGame() {
     const onsubmit = async (e) => {
         e.preventDefault();
 
-        if(!selectedUser) {
+        if (!selectedUser) {
             setErrorMsg('Please select a user to send the game to.');
             return;
         }
@@ -97,7 +97,7 @@ export default function NewGame() {
 
             if (error) throw error;
 
-            if(data) console.log('New game created with ID:', data);
+            if (data) console.log('New game created with ID:', data);
 
             setLoading(false);
             navigate('/');
@@ -162,6 +162,10 @@ export default function NewGame() {
                                 onChange={(e) => setMessage(e.target.value)}
                                 required
                             />
+
+                            <div className="label flex justify-end mt-1">
+                                <span className="label-text-alt text-gray-500">{message.length} characters</span>
+                            </div>
 
                             <div className="card-actions justify-end mt-4">
                                 <button type="submit" className="btn btn-primary">Create</button>
