@@ -7,7 +7,7 @@ export default function DemoGame() {
     const [childKey, setChildKey] = useState(0);
 
     // Static message for demo
-    const DEMO_MESSAGE = "THE QUICK BROWN FOX JUMPS OVER THE LAZY DOG";
+    const DEMO_MESSAGE = "YOU HAVE DISCOVERED A HIDDEN WORLD";
 
     // Create a mock session object for demo mode
     const mockSession = {
@@ -15,43 +15,43 @@ export default function DemoGame() {
         game_id: 'demo-game',
         lives: 3,
         guesses: {
-            0: 'T',
-            8: 'K',
-            12: 'O',
-            20: 'J',
-            28: 'E',
-            36: 'A'
+            0: 'Y',
+            1: 'O',
+            4: 'H',
+            7: 'E',
+            9: 'D',
+            20: 'A'
         },
-        revealed_indices: [0, 8, 12, 20, 28, 36],
+        revealed_indices: [0, 1, 4, 7, 9, 20],
         hints_used: 0,
-        active_index: 1,
+        active_index: 2,
         cryptogram_map: {
-            'T': '20',
-            'H': '8',
-            'E': '5',
-            'Q': '17',
-            'U': '21',
-            'I': '9',
-            'C': '3',
-            'K': '11',
-            'B': '2',
-            'R': '18',
+            'Y': '25',
             'O': '15',
-            'W': '23',
+            'U': '21',
+            'H': '8',
+            'A': '1',
+            'V': '22',
+            'E': '5',
+            'D': '4',
+            'I': '9',
+            'S': '19',
+            'C': '3',
+            'R': '18',
+            'T': '20',
             'N': '14',
+            'W': '23',
+            'G': '7',
+            'L': '12',
+            'B': '2',
+            'K': '11',
+            'P': '16',
+            'M': '13',
             'F': '6',
             'X': '24',
-            'J': '10',
-            'M': '13',
-            'P': '16',
-            'S': '19',
-            'V': '22',
-            'L': '12',
-            'A': '1',
             'Z': '26',
-            'Y': '25',
-            'D': '4',
-            'G': '7'
+            'J': '10',
+            'Q': '17'
         },
         initial_revealed: []
     };
