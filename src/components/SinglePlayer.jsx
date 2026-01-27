@@ -49,7 +49,6 @@ export default function SinglePlayer() {
                     .single();
 
                 if (data) {
-                    console.log('Level Data: ', data);
                     setProgress(data);
                 }
 
@@ -80,7 +79,6 @@ export default function SinglePlayer() {
                         .single();
 
                     if (data) {
-                        console.log('Existing Game: ', data);
                         game = data;
                     }
 
@@ -109,7 +107,6 @@ export default function SinglePlayer() {
                 .single();
 
             game = gameData;
-            console.log('New Game: ', gameData);
 
             if (gameError) {
                 throw gameError;
