@@ -20,8 +20,8 @@ export default function Cell({ cell, isActive, onGuess, onFocus, isError }) {
       <input 
         ref={ref}
         readOnly
-        className={`w-8 h-8 text-center border-2 rounded-md border-gray-500 focus:outline-none
-        ${isActive ? "border-blue-500" : ""}
+        className={`w-8 h-8 text-center border-2 rounded-md focus:outline-none
+        ${isActive ? "border-blue-500" : "border-gray-500"}
         ${cell.revealed ? "bg-green-200" : ""} focus:border-blue-500
         ${isError ? "border-red-500": ""}`}
         disabled={cell.revealed}
