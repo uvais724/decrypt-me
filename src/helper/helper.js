@@ -1,7 +1,4 @@
 export function initializeGuesses(cryptogramMap, revealedIndices, message) {
-    console.log('Cryptogram map: ', cryptogramMap);
-    console.log('Initial reveaded indices: ', revealedIndices);
-    console.log('Message: ', message);
     const guesses = {};
     // For revealed indices, map the character to its cryptogram number
     revealedIndices.forEach(index => {
@@ -62,13 +59,11 @@ export function shuffle(array) {
 }
 
 export function pickRandomIndices(chars, count) {
-    console.log('Characters" ', chars);
     const result = chars
         .map((c, i) => (/[A-Z]/.test(c) ? i : null))
         .filter(i => i !== null)
         .sort(() => 0.5 - Math.random())
         .slice(0, count);
-    console.log('Result: ', result);
     return result;
 }
 
