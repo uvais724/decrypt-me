@@ -10,27 +10,6 @@ export default function SinglePlayer() {
     const navigate = useNavigate();
 
     useEffect(() => {
-        const createUserProgressIfNotExist = async () => {
-            try {
-                const { data, error } = await supabase.from('single_player_progress')
-                    .select('*')
-                    .eq('user_id', user.id);
-
-                if (error) throw error;
-
-                if (data && data.length === 0) {
-                    const { error } = await supabase.from('single_player_progress')
-                        .insert({
-                            'user_id': user.id
-                        });
-
-                    if (error) throw error;
-                }
-            } catch (error) {
-                console.error(error);
-            }
-        };
-
         const fetchLevel = async () => {
             try {
                 const { data, error } = await supabase
@@ -58,9 +37,7 @@ export default function SinglePlayer() {
             }
         };
 
-        if(createUserProgressIfNotExist()) {
-            setTimeout(fetchLevel, 500);
-        }
+        fetchLevel();
     }, []);
 
     async function createAndStartGame() {
