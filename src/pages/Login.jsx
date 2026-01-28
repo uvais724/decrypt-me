@@ -84,10 +84,25 @@ export default function Login() {
         {/* Banner / Hero Section */}
         <div className="mb-10 text-center group">
 
+          {/* Gradient Accent Line */}
+          <div
+            className="hidden md:block
+              mx-auto mb-4 h-1 w-32 rounded-full
+              bg-linear-to-r from-cyan-400 via-blue-400 to-purple-500
+
+              /* Desktop starts calmer */
+              md:w-24 md:from-blue-300 md:via-blue-400 md:to-blue-300
+
+              /* Desktop hover effect */
+              md:transition-all md:duration-500 md:group-hover:w-40
+              md:group-hover:from-cyan-400 md:group-hover:via-blue-400 md:group-hover:to-purple-500
+            "
+          ></div>
+
           {/* Headline */}
           <h1
             className="
-              text-4xl sm:text-5xl font-extrabold tracking-tight mb-4
+              text-4xl sm:text-5xl font-extrabold tracking-tight mb-1
 
               /* Mobile: rich gradient by default */
               bg-clip-text text-transparent
