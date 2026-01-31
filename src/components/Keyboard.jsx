@@ -19,7 +19,7 @@ export default function Keyboard({
               onClick={() => onKey(k)}
               disabled={disabledKeys.has(k)}
               className={`
-                relative border px-4 py-2 max-sm:px-2 rounded
+                relative border px-4 py-2 max-sm:px-0 max-sm:min-w-7 rounded
                 ${disabledKeys.has(k) ? "border-gray-200 text-gray-400" : ""}
                 ${
                   partiallyRevealedKeys.has(k)
