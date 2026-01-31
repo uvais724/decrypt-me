@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabaseClient';
 import { useAuth } from '../context/AuthContext';
 import { useGameRefresh } from '../context/GameRefreshContext';
+import { toPng } from "html-to-image";
+import { isDesktop } from '../helper/helper';
 
 export default function Modal({ gameId, sessionId, gamePuzzle, gameResult, onTryAgain, isSinglePlayer = false, currentLevel = null, isDemo = false }) {
     const dialogRef = useRef(null);
@@ -13,29 +15,29 @@ export default function Modal({ gameId, sessionId, gamePuzzle, gameResult, onTry
 
     useEffect(() => {
         dialogRef.current?.showModal();
-        
+
         // Prevent closing when clicking outside the modal
         const handleCancel = (e) => {
             e.preventDefault();
         };
-        
+
         dialogRef.current?.addEventListener('cancel', handleCancel);
 
         if (gamePuzzle) {
             const updateGameStatus = async () => {
                 try {
-                    if(!isSinglePlayer) {
+                    if (!isSinglePlayer) {
                         const { error } = await supabase
-                        .from('games')
-                        .update({
-                            status: 'SOLVED',
-                            solved_at: new Date().toISOString()
-                        })
-                        .eq('game_id', gameId);
+                            .from('games')
+                            .update({
+                                status: 'SOLVED',
+                                solved_at: new Date().toISOString()
+                            })
+                            .eq('game_id', gameId);
 
                         if (error) throw error;
                     }
-                    
+
 
                     // If single player, increment the level
                     if (isSinglePlayer && currentLevel !== null) {
@@ -76,7 +78,7 @@ export default function Modal({ gameId, sessionId, gamePuzzle, gameResult, onTry
                     .eq('session_id', sessionId);
 
                 if (error) throw error;
-                
+
                 // Trigger refresh to update GameList
                 triggerRefresh();
                 setLoading(false);
@@ -99,11 +101,41 @@ export default function Modal({ gameId, sessionId, gamePuzzle, gameResult, onTry
         };
 
         await deleteSession();
-        if(isSinglePlayer) {
+        if (isSinglePlayer) {
             await deleteGame();
         }
 
         dialogRef.current?.close();
+    };
+
+
+    const handleShare = async () => {
+        if (!dialogRef.current) return;
+
+        const dataUrl = await toPng(dialogRef.current, {
+            backgroundColor: "#ffffff",
+            pixelRatio: 2
+        });
+
+        const blob = await (await fetch(dataUrl)).blob();
+        const file = new File([blob], "cryptogram-win.png", {
+            type: "image/png"
+        });
+
+        // ✅ Mobile share
+        if (!isDesktop() && navigator.canShare?.({ files: [file] })) {
+            await navigator.share({
+                title: "I cracked this cryptogram 🧠🔥",
+                files: [file]
+            });
+        } else {
+            // ⬇️ Desktop fallback
+            const link = document.createElement("a");
+            link.href = dataUrl;
+            link.download = "cryptogram-win.png";
+            link.click();
+        }
+
         navigate('/');
     };
 
@@ -120,12 +152,18 @@ export default function Modal({ gameId, sessionId, gamePuzzle, gameResult, onTry
                 )}
                 {gamePuzzle ? <><h3>The hidden message is</h3> <blockquote className="p-4 mt-2 text-xl italic font-semibold tracking-tight text-heading bg-gray-300">
                     <p>{gamePuzzle}</p>
-                </blockquote></> : <span></span>}
+                </blockquote>
+                </> : <span></span>}
 
-                <div className="modal-action">
+                <div className="mt-4">
                     <form method="dialog">
                         {/* if there is a button in form, it will close the modal */}
-                        {gameResult === "Game Over!" ? <button className="btn" onClick={onTryAgain}>Try Again</button> : <button className="btn" onClick={handleClose}>Close</button>}
+                        {gameResult === "Game Over!" ? <button className="btn" onClick={onTryAgain}>Try Again</button> : <div className="flex justify-between"><button
+                        className="btn btn-success"
+                        onClick={handleShare}
+                    >
+                        Share 🎉
+                    </button><button className="btn" onClick={handleClose}>Close</button></div>}
                     </form>
                 </div>
             </div>
