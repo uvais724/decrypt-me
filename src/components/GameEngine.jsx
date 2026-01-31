@@ -273,6 +273,8 @@ export default function GameEngine({
           isSinglePlayer={isSinglePlayer}
           currentLevel={currentLevel}
           isDemo={isDemo}
+          lives={lives}
+          hintsUsed={hintsUsed}
         />
       )}
     </div>
