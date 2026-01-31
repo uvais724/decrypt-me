@@ -123,7 +123,7 @@ export default function Modal({ gameId, sessionId, gamePuzzle, gameResult, onTry
         });
 
         // ✅ Mobile share
-        if (!isDesktop() && navigator.canShare?.({ files: [file] })) {
+        if (isMobile() && navigator.canShare?.({ files: [file] })) {
             await navigator.share({
                 title: "I cracked this cryptogram 🧠🔥",
                 files: [file]
