@@ -4,7 +4,7 @@ import { supabase } from '../lib/supabaseClient';
 import { useAuth } from '../context/AuthContext';
 import { useGameRefresh } from '../context/GameRefreshContext';
 import { toPng } from "html-to-image";
-import { isDesktop } from '../helper/helper';
+import { isMobile } from '../helper/helper';
 
 export default function Modal({ gameId, sessionId, gamePuzzle, gameResult, onTryAgain, isSinglePlayer = false, currentLevel = null, isDemo = false }) {
     const dialogRef = useRef(null);
