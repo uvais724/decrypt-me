@@ -77,9 +77,8 @@ export function findFirstUnrevealed(chars, revealed) {
 export const isDesktop = () => {
   const userAgent = navigator.userAgent;
   // Check for common desktop OS keywords and the absence of mobile identifiers
-  const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini|Mobi/i.test(userAgent);
   const isDesktopOS = /Windows|Macintosh|Linux/i.test(userAgent);
   
   // A simple check might just be to ensure it's not a common mobile device
-  return !isMobile || isDesktopOS;
+  return isDesktopOS;
 };
