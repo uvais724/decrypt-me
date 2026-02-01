@@ -213,7 +213,7 @@ export default function GameEngine({
                     </div>
                 </div>
             )}
-        <div className='max-h-[50vh] overflow-x-auto'>
+        <div className='max-h-[45vh] overflow-x-auto'>
           <div className='bg-gray-50 h-auto overflow-y-auto overflow-x-auto border border-gray-200'>
             <Board
               board={board}
@@ -248,7 +248,7 @@ export default function GameEngine({
       </div>
 
       {/* Keyboard */}
-      <div className='bg-white shadow-lg w-full sm:max-w-2xl overflow-y-auto max-sm:fixed max-sm:bottom-0'>
+      <div className='bg-white shadow-lg w-full sm:max-w-2xl overflow-y-auto'>
         <div className='py-3'>
           {/* <h3 className='font-bold text-gray-700 mb-2 text-center'>Keyboard</h3> */}
           <div className='bg-gray-50 py-4 max-sm:pb-0 border border-gray-200'>
