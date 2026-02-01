@@ -108,6 +108,7 @@ export default function Modal({ gameId, sessionId, gamePuzzle, gameResult, onTry
         }
 
         dialogRef.current?.close();
+        navigate('/');
     };
 
 
