@@ -146,7 +146,7 @@ export default function Modal({ gameId, sessionId, gamePuzzle, gameResult, onTry
     return (
         <>
             <dialog ref={dialogRef} className="modal">
-                <div className="modal-box">
+                <div className={`modal-box ${gameResult === "Game Over!" ? "justify-center text-center" : ""}`}>
                     <h3 className={`font-bold text-lg ${gameResult === "Game Over!" ? "text-red-500" : "text-green-500"}`}>{gameResult}</h3>
                     {isSinglePlayer && gameResult !== "Game Over!" && (
                         <div className="mt-4 p-3 bg-purple-100 border border-purple-300 rounded">
