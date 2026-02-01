@@ -213,7 +213,7 @@ export default function GameEngine({
                     </div>
                 </div>
             )}
-        <div className='max-h-[60vh] overflow-x-auto'>
+        <div className='max-h-[50vh] overflow-x-auto'>
           <div className='bg-gray-50 h-auto overflow-y-auto overflow-x-auto border border-gray-200'>
             <Board
               board={board}
