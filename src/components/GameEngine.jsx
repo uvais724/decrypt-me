@@ -180,7 +180,7 @@ export default function GameEngine({
   };
 
   return (
-    <div className='h-screen bg-linear-to-br from-blue-50 to-indigo-100 flex flex-col items-center justify-center'>
+    <div className='md:h-screen bg-linear-to-br from-blue-50 to-indigo-100 flex flex-col items-center justify-center'>
       {/* Back Button for Demo Mode */}
       {isDemo && (
         <div className='w-full sm:max-w-2xl bg-white shadow-lg p-3 flex justify-start'>
