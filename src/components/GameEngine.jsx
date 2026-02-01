@@ -180,7 +180,7 @@ export default function GameEngine({
   };
 
   return (
-    <div className='h-screen bg-linear-to-br from-blue-50 to-indigo-100 flex flex-col items-center justify-center'>
+    <div className='bg-linear-to-br from-blue-50 to-indigo-100 flex flex-col items-center justify-center'>
       {/* Back Button for Demo Mode */}
       {isDemo && (
         <div className='w-full sm:max-w-2xl bg-white shadow-lg p-3 flex justify-start'>
@@ -248,10 +248,10 @@ export default function GameEngine({
       </div>
 
       {/* Keyboard */}
-      <div className='h-[30vh] bg-white shadow-lg w-full sm:max-w-2xl overflow-y-auto'>
+      <div className='bg-white shadow-lg w-full sm:max-w-2xl overflow-y-auto'>
         <div className='py-3'>
           {/* <h3 className='font-bold text-gray-700 mb-2 text-center'>Keyboard</h3> */}
-          <div className='bg-gray-50 md:p-4 border border-gray-200'>
+          <div className='bg-gray-50 p-4 border border-gray-200'>
             <Keyboard
               onKey={(char) => guessLetter(activeIndex, char)}
               disabledKeys={disabledKeys}
