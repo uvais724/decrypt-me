@@ -58,29 +58,14 @@ export function shuffle(array) {
     return array;
 }
 
-export function pickRandomIndices(chars, count, alreadyRevealed = new Set()) {
-    // Collect valid unrevealed letter indices
-    const candidates = [];
-
-    for (let i = 0; i < chars.length; i++) {
-        if (/[A-Z]/.test(chars[i]) && !alreadyRevealed.has(i)) {
-            candidates.push(i);
-        }
-    }
-
-    const result = [];
-
-    while (result.length < count && candidates.length > 0) {
-        const randIndex = Math.floor(Math.random() * candidates.length);
-        result.push(candidates[randIndex]);
-
-        // Remove chosen index so it can't be picked again
-        candidates.splice(randIndex, 1);
-    }
-
+export function pickRandomIndices(chars, count) {
+    const result = chars
+        .map((c, i) => (/[A-Z]/.test(c) ? i : null))
+        .filter(i => i !== null)
+        .sort(() => 0.5 - Math.random())
+        .slice(0, count);
     return result;
 }
-
 
 
 export function findFirstUnrevealed(chars, revealed) {
@@ -97,4 +82,3 @@ export function isMobile() {
   // A simple check might just be to ensure it's not a common mobile device
   return isMobile;
 }
-
