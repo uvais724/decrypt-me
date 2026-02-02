@@ -73,14 +73,21 @@ export function useCryptogramGame(
     }, [letterToIndices, revealedIndices]);
 
     const board = useMemo(() => {
-        return chars.map((char, i) => ({
-            index: i,
-            letter: char,
-            value: cryptogramMap.get(char),
-            revealed:
-                revealedIndices.includes(i) ||
-                guesses[i] === char
-        }));
+        return chars.map((char, i) => {
+            const charValue = cryptogramMap.get(char);
+            const isHint = revealedIndices.includes(i);
+            const userGuess = guesses[charValue];
+
+            return {
+                index: i,
+                letter: char,
+                value: charValue,
+                // ONLY true if it was one of the specific random indices picked
+                revealed: isHint,
+                // The value to display in the box (either the hint or what the user typed)
+                displayLetter: isHint ? char : (userGuess || "")
+            };
+        });
     }, [chars, cryptogramMap, guesses, revealedIndices]);
 
     /* ------------------ GAME LOGIC ------------------ */
