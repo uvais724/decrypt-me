@@ -113,7 +113,9 @@ export default function Modal({ gameId, sessionId, gamePuzzle, gameResult, onTry
 
 
     const handleShare = async () => {        
-        if (!shareRef.current) return;
+        if (!shareRef.current) {
+            await handleClose();
+        };
 
         const dataUrl = await toPng(shareRef.current, {
             backgroundColor: "#ffffff",
@@ -139,7 +141,7 @@ export default function Modal({ gameId, sessionId, gamePuzzle, gameResult, onTry
             link.click();
         }
 
-        navigate('/');
+        await handleClose();
     };
 
 
