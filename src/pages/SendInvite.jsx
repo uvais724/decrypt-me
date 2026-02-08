@@ -5,7 +5,7 @@ import { supabase } from '../lib/supabaseClient';
 import { useAuth } from '../context/AuthContext';
 
 export default function SendInvite() {
-  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
   const [checkUser, setCheckUser] = useState(false);
   const [checkUserFlag, setCheckUserFlag] = useState(null);
   const [relationshipType, setRelationshipType] = useState('');
@@ -15,7 +15,7 @@ export default function SendInvite() {
   const {user} = useAuth();
 
   const handleSendInvite = async () => {
-    if (!username || !relationshipType) return;
+    if (!email || !relationshipType) return;
 
     setLoading(true);
     try {
@@ -69,13 +69,13 @@ export default function SendInvite() {
       
       if(inviteData) {
         alert('Invite send successfully!');
-        setUsername('');
+        setEmail('');
         setRelationshipType('');
         setCheckUser(false);
         setCheckUserFlag(null);
       }
 
-      if(inviteError) throw error;
+      if(inviteError) throw inviteError;
 
     } catch (err) {
       console.error('Invite error:', err.message);
@@ -86,25 +86,26 @@ export default function SendInvite() {
   };
 
   const handleUserCheck = async () => {
-    if(!username) return;
+    if(!email) return;
     try {
       const { data, error } = await supabase
         .from('users')
         .select('*')
-        .eq('username', username)
+        .eq('email', email)
         .single();
 
        if(data && data.user_id !== user.id) {
           setCheckUser(data);
           setCheckUserFlag(true);
-       } else {
-        throw new Error('You cannot add you own username!');
+       } else if(data && data.user_id === user.id) {
+        throw new Error('You cannot add you own email!');
        }
 
        if(error) throw error;
     } catch(err) {
       console.error('Error while checking user: ', err);
-      setError('Something went wrong while checking the user. Please try again later.');
+      setError('User not found. Please check the email and try again.');
+      setCheckUserFlag(false);
     }
   };
 
@@ -128,8 +129,8 @@ export default function SendInvite() {
               <input
                 className="input input-bordered"
                 placeholder="Invitee email"
-                value={username}
-                onChange={e => setUsername(e.target.value)}
+                value={email}
+                onChange={e => setEmail(e.target.value)}
               />
               <button className="btn btn-primary" onClick={handleUserCheck}>Check</button>
             </div>
