@@ -120,6 +120,7 @@ export default function DailyPuzzle() {
                         <p className="text-gray-700">
                             Complete today&apos;s puzzle before all 3 attempts are used.
                             Once you complete the puzzle, you cannot play again until the next day&apos;s puzzle is released.
+                            Use the attempts wisely as you only get to set time once.
                         </p>
 
                         {countdown === null ? (
