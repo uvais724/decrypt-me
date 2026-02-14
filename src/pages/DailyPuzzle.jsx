@@ -92,32 +92,13 @@ export default function DailyPuzzle() {
     return (
         <>
             <Navbar />
-            {dailyStatus?.solved ? (
-                <div className="text-center p-10">
-                    <h2 className="text-xl font-bold text-green-600">
-                        ✅ You already solved today's puzzle!
-                    </h2>
-                    <p>Come back tomorrow for a new challenge.</p>
-                    <Link to="/" className="btn btn-primary mt-4">
-                        Back to Home
-                    </Link>
-                </div>
-            ) : dailyStatus?.attempts_used >= 3 ? (
-                <div className="text-center p-10">
-                    <h2 className="text-xl font-bold text-red-600">
-                        ❌ No attempts left for today.
-                    </h2>
-                    <p>Try again tomorrow.</p>
-                </div>
-            ) : (
-                <GameEngine
-                    gameId="daily"
-                    message={message}
-                    isDailyPuzzle={true}
-                    dailyStatus={dailyStatus}
-                    session={session}
-                />
-            )}
+            <GameEngine
+                gameId="daily"
+                message={message}
+                isDailyPuzzle={true}
+                dailyStatus={dailyStatus}
+                session={session}
+            />
 
         </>
     )

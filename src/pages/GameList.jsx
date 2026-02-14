@@ -224,7 +224,7 @@ export default function GameList() {
 
                                 <div className="flex justify-between items-center">
                                     <div>
-                                        <h3 className="card-title">🧩 Puzzle for {dailyPuzzle.puzzle_date}</h3>
+                                        <h3 className="card-title">🧩 Puzzle for today!</h3>
                                     </div>
 
                                     {dailyStatus?.solved ? (
@@ -239,7 +239,7 @@ export default function GameList() {
                                 <div className="grid grid-cols-3 gap-4 mt-4">
 
                                     <div className="stat bg-base-200 rounded p-2">
-                                        <div className="stat-title text-sm">Your Best Time</div>
+                                        <div className="stat-title text-sm text-wrap">Your Best Time</div>
                                         <div className="stat-value text-lg">
                                             {dailyStatus.best_time_seconds
                                                 ? `${dailyStatus.best_time_seconds}s`
@@ -248,14 +248,14 @@ export default function GameList() {
                                     </div>
 
                                     <div className="stat bg-base-200 rounded p-2">
-                                        <div className="stat-title text-sm">Your Attempts</div>
+                                        <div className="stat-title text-sm text-wrap">Your Attempts</div>
                                         <div className="stat-value text-lg">
                                             {dailyStatus?.attempts_used ?? 0} / 3
                                         </div>
                                     </div>
 
                                     <div className="stat bg-base-200 rounded p-2">
-                                        <div className="stat-title text-sm">Time To Beat</div>
+                                        <div className="stat-title text-sm text-wrap">Time To Beat</div>
                                         <div className="stat-value text-lg">
                                             {timeToBeat ? `${timeToBeat}s` : "—"}
                                             
@@ -268,7 +268,7 @@ export default function GameList() {
                                 </div>
 
                                 <div className="card-actions justify-end mt-4">
-                                    <Link to={`/daily`} className="btn btn-primary" disabled={dailyStatus?.solved}>
+                                    <Link to={`/daily`} className="btn btn-primary" disabled={dailyStatus?.solved || dailyStatus?.attempts_used >= 3}>
                                             Play Daily Puzzle
                                     </Link>
                                 </div>
