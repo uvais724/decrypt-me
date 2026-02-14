@@ -13,6 +13,7 @@ export default function Login() {
   const [showHowToPlay, setShowHowToPlay] = useState(false);
   const [timeToBeat, setTimeToBeat] = useState(null);
   const [recordHolder, setRecordHolder] = useState(null);
+  const [resetCountdown, setResetCountdown] = useState('--:--:--');
 
   const navigate = useNavigate();
   const { login } = useAuth();
@@ -47,6 +48,36 @@ export default function Login() {
   const formattedTimeToBeat = timeToBeat == null
     ? "--"
     : `${String(Math.floor(timeToBeat / 60)).padStart(2, "0")}:${String(timeToBeat % 60).padStart(2, "0")}`;
+
+  useEffect(() => {
+    const updateResetCountdown = () => {
+      const nowMs = Date.now();
+      const istOffsetMs = 5.5 * 60 * 60 * 1000;
+      const istNow = new Date(nowMs + istOffsetMs);
+
+      const year = istNow.getUTCFullYear();
+      const month = istNow.getUTCMonth();
+      const day = istNow.getUTCDate();
+
+      let nextResetUtcMs = Date.UTC(year, month, day, 10, 0, 0, 0) - istOffsetMs;
+      if (nowMs >= nextResetUtcMs) {
+        nextResetUtcMs += 24 * 60 * 60 * 1000;
+      }
+
+      const diffMs = Math.max(0, nextResetUtcMs - nowMs);
+      const totalSeconds = Math.floor(diffMs / 1000);
+      const hours = String(Math.floor(totalSeconds / 3600)).padStart(2, '0');
+      const minutes = String(Math.floor((totalSeconds % 3600) / 60)).padStart(2, '0');
+      const seconds = String(totalSeconds % 60).padStart(2, '0');
+
+      setResetCountdown(`${hours}:${minutes}:${seconds}`);
+    };
+
+    updateResetCountdown();
+    const intervalId = setInterval(updateResetCountdown, 1000);
+
+    return () => clearInterval(intervalId);
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -262,6 +293,8 @@ export default function Login() {
               </div>
               <p className="text-xs text-base-content/70 mt-2">🔐 Login to play daily puzzle.</p>
             </div>
+
+            <p className="text-xs text-base-content/60 mt-1 mb-3 text-left">Resets daily at 10:00 AM IST ({resetCountdown} left)</p>
 
             {/* Try Now Button */}
             <button
