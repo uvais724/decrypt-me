@@ -241,7 +241,7 @@ export default function GameList() {
                                     <div className="stat bg-base-200 rounded p-2">
                                         <div className="stat-title text-sm text-wrap">Your Best Time</div>
                                         <div className="stat-value text-lg">
-                                            {dailyStatus.best_time_seconds
+                                            {dailyStatus && dailyStatus.best_time_seconds
                                                 ? `${dailyStatus.best_time_seconds}s`
                                                 : "—"}
                                         </div>
