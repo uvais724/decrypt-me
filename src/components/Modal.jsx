@@ -1,5 +1,5 @@
 //Modal.jsx
-import React, { useEffect, useRef } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabaseClient';
 import { useAuth } from '../context/AuthContext';
@@ -23,7 +23,7 @@ export default function Modal({
 }) {
   const dialogRef = useRef(null);
   const shareRef = useRef(null);
-
+  const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
   const { user } = useAuth();
   const { triggerRefresh } = useGameRefresh();
@@ -31,35 +31,104 @@ export default function Modal({
   useEffect(() => {
     dialogRef.current?.showModal();
 
-    const handleCancel = (e) => e.preventDefault();
+    // Prevent closing when clicking outside the modal
+    const handleCancel = (e) => {
+      e.preventDefault();
+    };
+
     dialogRef.current?.addEventListener('cancel', handleCancel);
+
+    if (gamePuzzle) {
+      const updateGameStatus = async () => {
+        try {
+          if (!isSinglePlayer) {
+            const { error } = await supabase
+              .from('games')
+              .update({
+                status: 'SOLVED',
+                solved_at: new Date().toISOString()
+              })
+              .eq('game_id', gameId);
+
+            if (error) throw error;
+          }
+
+
+          // If single player, increment the level
+          if (isSinglePlayer && currentLevel !== null) {
+            const { error: updateError } = await supabase
+              .from('single_player_progress')
+              .update({
+                current_level: currentLevel + 1
+              })
+              .eq('user_id', user.id);
+
+            if (updateError) throw updateError;
+          }
+
+        } catch (error) {
+          console.error('Error updating game status:', error);
+        }
+      };
+      updateGameStatus();
+    }
 
     return () => {
       dialogRef.current?.removeEventListener('cancel', handleCancel);
     };
   }, []);
 
-  const handleClose = async () => {
-    if (isDemo) {
-      navigate('/login');
-      return;
-    }
 
-    if (isDailyPuzzle) {
-      navigate('/');
-      return;
-    }
+   const handleClose = async () => {
+        // In demo mode, just navigate back to login
+        if (isDemo) {
+            navigate('/login');
+            return;
+        }
 
-    await supabase
-      .from('game_sessions')
-      .delete()
-      .eq('session_id', sessionId);
+        if (isDailyPuzzle) {
+          navigate('/');
+          return;
+        }
 
-    triggerRefresh();
+        const deleteSession = async () => {
+            try {
+                const { error } = await supabase
+                    .from('game_sessions')
+                    .delete()
+                    .eq('session_id', sessionId);
 
-    dialogRef.current?.close();
-    navigate('/');
-  };
+                if (error) throw error;
+
+                // Trigger refresh to update GameList
+                triggerRefresh();
+                setLoading(false);
+            } catch (error) {
+                console.error("Error deleting session:", error);
+                setLoading(false);
+            }
+        };
+
+        const deleteGame = async () => {
+            try {
+                const { error } = await supabase
+                    .from('games')
+                    .delete()
+                    .eq('game_id', gameId);
+                if (error) throw error;
+            } catch (error) {
+                console.error("Error deleting game:", error);
+            }
+        };
+
+        await deleteSession();
+        if (isSinglePlayer) {
+            await deleteGame();
+        }
+
+        dialogRef.current?.close();
+        navigate('/');
+    };
 
   const handleShare = async () => {
     if (!shareRef.current) return;

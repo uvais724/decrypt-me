@@ -181,10 +181,6 @@ export default function GameEngine({
     revealRandomCell();
   };
 
-  const handleGuess = (index, letter) => {
-    guessLetter(index, letter);
-  };
-
   const handleGiveUp = () => setShowGiveUpModal(true);
   const formattedTimer = `${String(Math.floor(elapsedSeconds / 60)).padStart(2, '0')}:${String(elapsedSeconds % 60).padStart(2, '0')}`;
 
