@@ -8,7 +8,8 @@ export function useCryptogramGame(
     {
         initialLives = 3,
         initialState = null,      // 👈 backend session data
-    } = {}
+    } = {},
+    blocked = false
 ) {
     const chars = useMemo(() => message.split(""), [message]);
 
@@ -112,6 +113,8 @@ export function useCryptogramGame(
 
     const guessLetter = useCallback(
         (index, letter) => {
+            if (blocked) return;
+
             if (!board[index]) return;
 
             if (board[index].letter === letter) {

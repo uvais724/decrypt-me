@@ -15,7 +15,6 @@ export default function Game() {
     const [childKey, setChildKey] = useState(0);
     const [isSinglePlayer, setIsSinglePlayer] = useState(false);
     const [currentLevel, setCurrentLevel] = useState(null);
-    const containerRef = useRef(null);
 
     useEffect(() => {
         setLoading(true);

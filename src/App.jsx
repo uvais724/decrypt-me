@@ -13,6 +13,7 @@ import SendInvite from "./pages/SendInvite";
 import Invite from "./pages/Invite";
 import CuratedPacks from "./pages/CuratedPacks";
 import AuthCallback from "./pages/AuthCallback";
+import DailyPuzzle from "./pages/DailyPuzzle";
 
 export default function App() {
 
@@ -27,6 +28,7 @@ export default function App() {
             {/* Protected Routes */}
             <Route element={<ProtectedRoute />}>
               <Route path="/" element={<GameList />} />
+              <Route path="/daily" element={<DailyPuzzle />} />
               <Route path="/:gameId" element={<Game />} />
               <Route path="/new-game" element={<NewGame />} />
               <Route path="/invite" element={<Invite />} />

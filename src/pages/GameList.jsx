@@ -32,6 +32,11 @@ export default function GameList() {
     const [pendingInvites, setPendingInvites] = useState(0);
     const [showNotification, setShowNotification] = useState(false);
     const [fadeOut, setFadeOut] = useState(false);
+    const [dailyPuzzle, setDailyPuzzle] = useState(null);
+    const [dailyStatus, setDailyStatus] = useState(null);
+    const [dailyLoading, setDailyLoading] = useState(true);
+    const [timeToBeat, setTimeToBeat] = useState(null);
+
 
     const difficultyBadge = (level) => {
         if (!level) return 'badge badge-neutral';
@@ -45,15 +50,71 @@ export default function GameList() {
 
     useEffect(() => {
         if (!user) return;
-        
+
         // Set loading to true when refresh is triggered
         setLoading(true);
-        
+
+        const fetchDailyPuzzle = async () => {
+            try {
+                const today = new Date().toISOString().split("T")[0];
+
+                // Fetch today's puzzle
+                const { data: puzzleData, error: puzzleError } = await supabase
+                    .from("daily_puzzles")
+                    .select("*")
+                    .eq("puzzle_date", today)
+                    .single();
+
+                if (puzzleError && puzzleError.code !== "PGRST116") throw puzzleError;
+
+                setDailyPuzzle(puzzleData);
+
+                if (!puzzleData) {
+                    setDailyLoading(false);
+                    return;
+                }
+
+                // Fetch user's attempt status
+                const { data: attemptData, error: attemptError } = await supabase
+                    .from("daily_puzzle_attempts")
+                    .select("*")
+                    .eq("user_id", user.id)
+                    .eq("puzzle_date", today)
+                    .single();
+
+                if (attemptError && attemptError.code !== "PGRST116") throw attemptError;
+
+                setDailyStatus(attemptData);
+            } catch (error) {
+                console.error("Error fetching daily puzzle:", error);
+            } finally {
+                setDailyLoading(false);
+            }
+        };
+
+        const fetchTimeToBeat = async () => {
+            try {
+                const today = new Date().toISOString().split("T")[0];
+                const { data, error } = await supabase
+                    .from("daily_puzzle_attempts")
+                    .select("best_time_seconds")
+                    .eq("puzzle_date", today)
+                    .order("best_time_seconds", { ascending: true })
+                    .limit(1)
+                    .single();
+
+                if (error && error.code !== "PGRST116") throw error;
+                setTimeToBeat(data?.best_time_seconds ?? null);
+            } catch (error) {
+                console.error("Error fetching time to beat:", error);
+            }
+        };
+
         const fetchAllGamesInProgress = async () => {
             try {
                 const { data, error } = await supabase
-                .from('games')
-                .select(`
+                    .from('games')
+                    .select(`
                     game_id,
                     difficulty_level,
                     status,
@@ -68,13 +129,13 @@ export default function GameList() {
                         hints_used
                     )
                 `)
-                .eq('prompts.receiver_id', user.id)
-                .eq('status', 'IN_PROGRESS');
+                    .eq('prompts.receiver_id', user.id)
+                    .eq('status', 'IN_PROGRESS');
 
-                if(error) throw error;
-                    
-                if(data) {
-                    const gamesData =  data.map(g => ({
+                if (error) throw error;
+
+                if (data) {
+                    const gamesData = data.map(g => ({
                         game_id: g.game_id,
                         difficulty_level: g.difficulty_level,
                         prompt_text: g.prompts.prompt_text,
@@ -83,7 +144,7 @@ export default function GameList() {
                         hints_used: g.game_sessions?.[0]?.hints_used ?? g.hints_used,
                         revealed_indices: g.game_sessions?.[0]?.revealed_indices ?? []
                     }));
-                    console.log(gamesData);
+                    //console.log(gamesData);
                     setGamesList(gamesData);
                 }
             } catch (error) {
@@ -96,15 +157,15 @@ export default function GameList() {
         const fetchPendingInvites = async () => {
             try {
                 const { data, error } = await supabase
-                .from('relationship_invites')
-                 .select('*', { count: 'exact' })
-                .eq('invitee_id', user.id)
-                .eq('status', 'PENDING');
+                    .from('relationship_invites')
+                    .select('*', { count: 'exact' })
+                    .eq('invitee_id', user.id)
+                    .eq('status', 'PENDING');
 
                 if (error) throw error;
                 const inviteCount = data.length;
                 setPendingInvites(inviteCount);
-                
+
                 // Show notification if there are pending invites
                 if (inviteCount > 0) {
                     setShowNotification(true);
@@ -117,6 +178,8 @@ export default function GameList() {
 
         fetchAllGamesInProgress();
         fetchPendingInvites();
+        fetchDailyPuzzle();
+        fetchTimeToBeat();
     }, [user, refreshTrigger])
 
     // Auto-hide notification after 5 seconds
@@ -150,7 +213,72 @@ export default function GameList() {
                     </div>
                 </div>
             )}
+
             <div className="container mx-auto p-6">
+
+                {/* -------- DAILY PUZZLE SECTION -------- */}
+                {!dailyLoading && dailyPuzzle && (
+                    <div className="mb-8">
+                        <h2 className="text-2xl font-bold mb-4">Daily Puzzle</h2>
+
+                        <div className="card bg-base-100 shadow-lg border border-primary">
+                            <div className="card-body">
+
+                                <div className="flex justify-between items-center">
+                                    <div>
+                                        <h3 className="card-title">🧩 Puzzle for today!</h3>
+                                    </div>
+
+                                    {dailyStatus?.solved ? (
+                                        <span className="badge badge-success">Completed</span>
+                                    ) : dailyStatus ? (
+                                        <span className="badge badge-warning">In Progress</span>
+                                    ) : (
+                                        <span className="badge badge-info">Not Started</span>
+                                    )}
+                                </div>
+
+                                <div className="grid grid-cols-3 gap-4 mt-4">
+
+                                    <div className="stat bg-base-200 rounded p-2">
+                                        <div className="stat-title text-sm text-wrap">Your Best Time</div>
+                                        <div className="stat-value text-lg">
+                                            {dailyStatus && dailyStatus.best_time_seconds
+                                                ? `${dailyStatus.best_time_seconds}s`
+                                                : "—"}
+                                        </div>
+                                    </div>
+
+                                    <div className="stat bg-base-200 rounded p-2">
+                                        <div className="stat-title text-sm text-wrap">Your Attempts</div>
+                                        <div className="stat-value text-lg">
+                                            {dailyStatus?.attempts_used ?? 0} / 3
+                                        </div>
+                                    </div>
+
+                                    <div className="stat bg-base-200 rounded p-2">
+                                        <div className="stat-title text-sm text-wrap">Time To Beat</div>
+                                        <div className="stat-value text-lg">
+                                            {timeToBeat ? `${timeToBeat}s` : "—"}
+                                            
+                                            {dailyStatus?.best_time_seconds && timeToBeat && dailyStatus.best_time_seconds <= timeToBeat && (
+                                                <span className="ml-2">🏆</span>
+                                            )}
+                                        </div>
+                                    </div>
+
+                                </div>
+
+                                <div className="card-actions justify-end mt-4">
+                                    <Link to={`/daily`} className="btn btn-primary" disabled={dailyStatus?.solved || dailyStatus?.attempts_used >= 3}>
+                                            Play Daily Puzzle
+                                    </Link>
+                                </div>
+
+                            </div>
+                        </div>
+                    </div>
+                )}
                 <div className="flex items-center justify-between mb-6">
                     <h1 className="text-3xl font-extrabold">Games In Progress</h1>
                     <Link className="btn btn-primary btn-sm" to="/new-game">

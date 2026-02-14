@@ -1,4 +1,3 @@
-// GameEngine.jsx
 import './GameEngine.css'
 import { useCryptogramGame } from "../hooks/useCryptogramGame";
 import Board from "./Board";
@@ -20,13 +19,37 @@ export default function GameEngine({
   isSinglePlayer = false,
   currentLevel = null,
   isDemo = false,
+  isDailyPuzzle = false,
+  dailyStatus = null
 }) {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { triggerRefresh } = useGameRefresh();
+
   const [showGiveUpModal, setShowGiveUpModal] = useState(false);
-  // 🔹 Holds latest serialized game state
+  const [startTime] = useState(Date.now());
+  const [elapsedSeconds, setElapsedSeconds] = useState(0);
+
+  const [attemptsUsed, setAttemptsUsed] = useState(dailyStatus?.attempts_used || 0);
+  const [solved, setSolved] = useState(dailyStatus?.solved || false);
+
   const latestStateRef = useRef(null);
+
+  const blocked = isDailyPuzzle && (
+    solved === true ||
+    attemptsUsed >= 3
+  );
+
+  useEffect(() => {
+    if (!isDailyPuzzle) return;
+
+    const timerId = setInterval(() => {
+      setElapsedSeconds(Math.floor((Date.now() - startTime) / 1000));
+    }, 1000);
+
+    return () => clearInterval(timerId);
+  }, [isDailyPuzzle, startTime]);
+
 
   const {
     board,
@@ -43,11 +66,11 @@ export default function GameEngine({
     revealedIndices,
     guesses,
     cryptogramNumbers,
-  } = useCryptogramGame(message, {
-    initialState: session
-  });
-
-  /* ------------------ KEEP STATE UPDATED ------------------ */
+  } = useCryptogramGame(
+    message,
+    { initialState: session },
+    blocked
+  );
 
   useEffect(() => {
     latestStateRef.current = {
@@ -59,85 +82,95 @@ export default function GameEngine({
       guesses,
       message
     };
-    setActiveIndex(activeIndex);
-  }, [
-    lives,
-    hintsUsed,
-    activeIndex,
-    isGameComplete,
-    revealedIndices,
-    guesses,
-    message,
-  ]);
+  }, [lives, hintsUsed, activeIndex, isGameComplete, revealedIndices, guesses, message]);
 
-  /* ------------------ PERSIST ON UNMOUNT ONLY ------------------ */
-  const lastSavedStateRef = useRef(null);
+  useEffect(() => {
+    if (!isDailyPuzzle || !user) return;
+
+    const updateAttempts = async () => {
+      // If player LOST the round
+      if (lives === 0 && !solved) {
+        const newAttempts = attemptsUsed + 1;
+
+        setAttemptsUsed(newAttempts);
+
+        const { data, error } = await supabase.from("daily_puzzle_attempts").upsert({
+          user_id: user.id,
+          puzzle_date: new Date().toISOString().split("T")[0],
+          attempts_used: newAttempts,
+          solved: false
+        });
+
+        console.log("Upserted daily puzzle attempt:", data);
+
+        if (error) {
+          console.error("Error updating daily puzzle attempts:", error);
+        }
+      }
+    };
+
+    updateAttempts();
+  }, [lives]);
+
+
+  // 🔐 DAILY PUZZLE COMPLETION TRACKING
+  useEffect(() => {
+    if (!isDailyPuzzle || !user) return;
+
+    const updateAttempts = async () => {
+      if (isGameComplete && !solved) {
+        const finishTime = Math.floor((Date.now() - startTime) / 1000);
+
+        const { data, error } = await supabase.from("daily_puzzle_attempts").upsert({
+          user_id: user.id,
+          puzzle_date: new Date().toISOString().split("T")[0],
+          solved: true,
+          attempts_used: attemptsUsed,
+          best_time_seconds: finishTime
+        });
+        console.log("Upserted daily puzzle completion:", data);
+
+        if (error) {
+          console.error("Error updating daily puzzle completion:", error);
+        }
+
+        setSolved(true);
+      }
+    };
+
+    updateAttempts();
+  }, [isGameComplete]);
+
 
   async function persistData() {
-    // Skip persistence in demo mode
-    if (isDemo) return;
-
-    // 1. Check if state exists
+    if (isDemo || isDailyPuzzle) return;
     if (!latestStateRef.current) return;
 
-    // 2. Optimization: Only save if the data has actually changed
-    const isChanged = JSON.stringify(latestStateRef.current) !== JSON.stringify(lastSavedStateRef.current);
-
-    if (!isChanged) {
-      console.log("No changes detected, skipping persist.");
-      return;
-    }
-
-    const payload = { ...latestStateRef.current };
-
     try {
-      const { data, error } = await supabase
-      .from('game_sessions')
-      .update({
-        guesses:payload.guesses,
-        revealed_indices: payload.revealedIndices,
-        hints_used: payload.hintsUsed,
-        lives: payload.lives,
-        active_index: payload.activeIndex,
-        updated_at: new Date().toISOString()
-      })
-      .eq('session_id', session.session_id)
-      .eq('user_id', user.id)
-      .select('session_id')
-      .single();
+      await supabase
+        .from('game_sessions')
+        .update({
+          guesses: latestStateRef.current.guesses,
+          revealed_indices: latestStateRef.current.revealedIndices,
+          hints_used: latestStateRef.current.hintsUsed,
+          lives: latestStateRef.current.lives,
+          active_index: latestStateRef.current.activeIndex,
+          updated_at: new Date().toISOString()
+        })
+        .eq('session_id', session.session_id)
+        .eq('user_id', user.id);
 
-      // Trigger refresh in GameList via Context
-      if(data) {
-        triggerRefresh();
-      }
-      
-      // Update the "last saved" marker after successful save
-      lastSavedStateRef.current = payload;
-
-      if (error) throw error;
+      triggerRefresh();
     } catch (error) {
       console.error("Failed to persist session:", error);
     }
   }
 
   useEffect(() => {
-    // Handler for closing tab / refreshing
-    const handleBeforeUnload = async (event) => {
-      // Note: Most modern browsers don't allow async calls in beforeunload.
-      // Use navigator.sendBeacon() if the request fails consistently here.
-      await persistData();
+    return () => {
+      persistData();
     };
-
-    window.addEventListener('beforeunload', handleBeforeUnload);
-
-    return async () => {
-      // CLEANUP: This runs when the user changes routes (component unmounts)
-      window.removeEventListener('beforeunload', handleBeforeUnload);
-      await persistData();
-    };
-  }, []); // Empty dependency array ensures this setup runs once
-
-  /* ------------------ UI LOGIC ------------------ */
+  }, []);
 
   const MAX_HINTS = 3;
   const canUseHint = hintsUsed < MAX_HINTS;
@@ -148,35 +181,23 @@ export default function GameEngine({
     revealRandomCell();
   };
 
-  const handleGiveUp = () => {
-    setShowGiveUpModal(true);
-  };
+  const handleGiveUp = () => setShowGiveUpModal(true);
+  const formattedTimer = `${String(Math.floor(elapsedSeconds / 60)).padStart(2, '0')}:${String(elapsedSeconds % 60).padStart(2, '0')}`;
 
   const confirmGiveUp = async () => {
     setShowGiveUpModal(false);
-    
-    const {error: deleteSessionError} = await supabase
+
+    await supabase
       .from('game_sessions')
       .delete()
       .eq('game_id', gameId);
-    
-    if(deleteSessionError) {
-      console.error("Error deleting game session: ", deleteSessionError);
-      return;
-    }
 
-    const {error} = await supabase
+    await supabase
       .from('games')
-      .update({
-        status: 'GAVE_UP'
-      })
+      .update({ status: 'GAVE_UP' })
       .eq('game_id', gameId);
-    
-    if (error) {
-      console.error("Error giving up the game: ", error);
-    } else {
-      navigate('/');
-    }
+
+    navigate('/');
   };
 
   return (
@@ -184,7 +205,7 @@ export default function GameEngine({
       {/* Back Button for Demo Mode */}
       {isDemo && (
         <div className='w-full sm:max-w-2xl bg-white shadow-lg p-3 flex justify-start'>
-          <button 
+          <button
             className='btn btn-ghost btn-sm'
             onClick={() => navigate('/login')}
           >
@@ -207,12 +228,19 @@ export default function GameEngine({
       {/* Game Board */}
       <div className='bg-white shadow-lg w-full sm:max-w-2xl'>
         {isSinglePlayer && currentLevel && (
-                <div className="bg-linear-to-r from-purple-600 to-blue-600 text-white py-4 px-6">
-                    <div className="container mx-auto flex items-center justify-center">
-                        <h1 className="text-2xl font-bold">Level {currentLevel}</h1>
-                    </div>
-                </div>
-            )}
+          <div className="bg-linear-to-r from-purple-600 to-blue-600 text-white py-4 px-6">
+            <div className="container mx-auto flex items-center justify-center">
+              <h1 className="text-2xl font-bold">Level {currentLevel}</h1>
+            </div>
+          </div>
+        )}
+        {isDailyPuzzle && (
+          <div className="bg-yellow-100 text-center p-2 text-sm">
+            Attempts used: {attemptsUsed} / 3 <span className="mx-2">|</span> Time: {formattedTimer}
+            {solved && " – Completed!"}
+            {attemptsUsed >= 3 && !solved && " – Locked for today"}
+          </div>
+        )}
         <div className='max-h-[45vh] overflow-x-auto'>
           <div className='bg-gray-50 h-auto overflow-y-auto overflow-x-auto border border-gray-200'>
             <Board
@@ -230,7 +258,7 @@ export default function GameEngine({
       <div className='bg-white shadow-lg w-full sm:max-w-2xl'>
         <div className='pt-3'>
           <div className='flex flex-wrap justify-center items-center gap-4'>
-            <button className='max-sm:btn-xs btn btn-error btn-lg gap-2' onClick={handleGiveUp} disabled={isSinglePlayer || isDemo}>
+            <button className='max-sm:btn-xs btn btn-error btn-lg gap-2' onClick={handleGiveUp} disabled={isSinglePlayer || isDemo || isDailyPuzzle}>
               Give Up!
             </button>
 
@@ -262,7 +290,6 @@ export default function GameEngine({
         </div>
       </div>
 
-      {/* Modal */}
       {showModal && (
         <Modal
           gameId={gameId}
@@ -275,6 +302,7 @@ export default function GameEngine({
           isDemo={isDemo}
           lives={lives}
           hintsUsed={hintsUsed}
+          isDailyPuzzle={isDailyPuzzle}
         />
       )}
     </div>

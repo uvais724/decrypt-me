@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../lib/supabaseClient';
@@ -11,9 +11,42 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [showHowToPlay, setShowHowToPlay] = useState(false);
+  const [timeToBeat, setTimeToBeat] = useState(null);
+  const [recordHolder, setRecordHolder] = useState(null);
 
   const navigate = useNavigate();
   const { login } = useAuth();
+
+  useEffect(() => {
+    const fetchDailyTimeToBeat = async () => {
+      try {
+        const today = new Date().toISOString().split("T")[0];
+        const { data, error } = await supabase
+          .from("daily_puzzle_leaderboard")
+          .select("best_time_seconds, username")
+          .eq("puzzle_date", today)
+          .order("best_time_seconds", { ascending: true })
+          .limit(1)
+          .single();
+
+
+        if (error) throw error;
+
+        setTimeToBeat(data?.best_time_seconds ?? null);
+        setRecordHolder(data?.username ?? null);
+      } catch (err) {
+        console.error("Error fetching daily time to beat:", err);
+        setTimeToBeat(null);
+        setRecordHolder(null);
+      }
+    };
+
+    fetchDailyTimeToBeat();
+  }, []);
+
+  const formattedTimeToBeat = timeToBeat == null
+    ? "--"
+    : `${String(Math.floor(timeToBeat / 60)).padStart(2, "0")}:${String(timeToBeat % 60).padStart(2, "0")}`;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -80,6 +113,29 @@ export default function Login() {
       <HowToPlay isOpen={showHowToPlay} onClose={() => setShowHowToPlay(false)} />
 
       <div className="w-full max-w-md text-center">
+        <div className="hidden">
+          <div className="card-body p-4">
+            <div className="flex items-center justify-between">
+              <h3 className="card-title text-base sm:text-lg">🧩 Daily Puzzle Challenge</h3>
+              <span className="badge badge-sm badge-warning badge-outline">🏆 Time To Beat</span>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3 mt-2">
+              <div className="stat bg-base-200 rounded-lg p-3">
+                <div className="stat-title text-xs">⏱️ Best Time</div>
+                <div className="stat-value text-lg">{formattedTimeToBeat}</div>
+              </div>
+              <div className="stat bg-base-200 rounded-lg p-3">
+                <div className="stat-title text-xs">👤 Set By</div>
+                <div className="stat-value text-lg truncate">{recordHolder || "--"}</div>
+              </div>
+            </div>
+
+            <div className="alert alert-info mt-3 py-2 px-3">
+              <span className="text-sm">🔐 Login to play daily puzzle.</span>
+            </div>
+          </div>
+        </div>
 
         {/* Banner / Hero Section */}
         <div className="mb-10 text-center group">
@@ -187,6 +243,24 @@ export default function Login() {
               >
                 How to Play ?
               </button>
+            </div>
+
+            <div className="rounded-xl bg-base-200/80 border border-base-300 p-3 mb-4 text-left">
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-sm font-semibold">🧩 Daily Puzzle Challenge</p>
+                <span className="badge badge-warning badge-outline badge-sm">🏆</span>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <div className="rounded-lg bg-base-100 px-3 py-2">
+                  <p className="text-[11px] uppercase tracking-wide text-base-content/60">⏱️ Time to beat</p>
+                  <p className="font-bold text-base">{formattedTimeToBeat}</p>
+                </div>
+                <div className="rounded-lg bg-base-100 px-3 py-2">
+                  <p className="text-[11px] uppercase tracking-wide text-base-content/60">👤 Set by</p>
+                  <p className="font-bold text-base truncate">{recordHolder || "--"}</p>
+                </div>
+              </div>
+              <p className="text-xs text-base-content/70 mt-2">🔐 Login to play daily puzzle.</p>
             </div>
 
             {/* Try Now Button */}
