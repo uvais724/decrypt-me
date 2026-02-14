@@ -194,7 +194,19 @@ export default function GameEngine({
 
   return (
     <div className='md:h-screen bg-linear-to-br from-blue-50 to-indigo-100 flex flex-col items-center justify-center'>
+      {/* Back Button for Demo Mode */}
+      {isDemo && (
+        <div className='w-full sm:max-w-2xl bg-white shadow-lg p-3 flex justify-start'>
+          <button
+            className='btn btn-ghost btn-sm'
+            onClick={() => navigate('/login')}
+          >
+            ← Back to Login
+          </button>
+        </div>
+      )}
 
+      {/* Confirmation Modal */}
       <ConfirmationModal
         isOpen={showGiveUpModal}
         title="Give Up?"
@@ -205,7 +217,15 @@ export default function GameEngine({
         onCancel={() => setShowGiveUpModal(false)}
       />
 
+      {/* Game Board */}
       <div className='bg-white shadow-lg w-full sm:max-w-2xl'>
+        {isSinglePlayer && currentLevel && (
+          <div className="bg-linear-to-r from-purple-600 to-blue-600 text-white py-4 px-6">
+            <div className="container mx-auto flex items-center justify-center">
+              <h1 className="text-2xl font-bold">Level {currentLevel}</h1>
+            </div>
+          </div>
+        )}
         {isDailyPuzzle && (
           <div className="bg-yellow-100 text-center p-2 text-sm">
             Attempts used: {attemptsUsed} / 3
@@ -213,41 +233,53 @@ export default function GameEngine({
             {attemptsUsed >= 3 && !solved && " – Locked for today"}
           </div>
         )}
-
-        <Board
-          board={board}
-          onGuess={handleGuess}
-          activeIndex={activeIndex}
-          setActiveIndex={setActiveIndex}
-          errorIndex={errorIndex}
-        />
-
-        <div className='flex justify-center gap-4 p-4'>
-          <button
-            className='btn btn-error'
-            onClick={handleGiveUp}
-            disabled={isSinglePlayer || isDemo || isDailyPuzzle}
-          >
-            Give Up!
-          </button>
-
-          <Lives lives={lives} />
-
-          <button
-            className='btn btn-info'
-            onClick={useHint}
-            disabled={!canUseHint}
-          >
-            Hints ({MAX_HINTS - hintsUsed} left)
-          </button>
+        <div className='max-h-[45vh] overflow-x-auto'>
+          <div className='bg-gray-50 h-auto overflow-y-auto overflow-x-auto border border-gray-200'>
+            <Board
+              board={board}
+              onGuess={guessLetter}
+              activeIndex={activeIndex}
+              setActiveIndex={setActiveIndex}
+              errorIndex={errorIndex}
+            />
+          </div>
         </div>
+      </div>
 
-        <Keyboard
-          onKey={(char) => !blocked && handleGuess(activeIndex, char)}
-          disabledKeys={disabledKeys}
-          partiallyRevealedKeys={partiallyRevealedKeys}
-          cryptogramNumbers={cryptogramNumbers}
-        />
+      {/* Controls */}
+      <div className='bg-white shadow-lg w-full sm:max-w-2xl'>
+        <div className='pt-3'>
+          <div className='flex flex-wrap justify-center items-center gap-4'>
+            <button className='max-sm:btn-xs btn btn-error btn-lg gap-2' onClick={handleGiveUp} disabled={isSinglePlayer || isDemo}>
+              Give Up!
+            </button>
+
+            <Lives lives={lives} />
+
+            <button
+              className='max-sm:btn-xs btn btn-info btn-lg gap-2'
+              onClick={useHint}
+              disabled={!canUseHint}
+            >
+              Hints ({MAX_HINTS - hintsUsed} left)
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Keyboard */}
+      <div className='bg-white shadow-lg w-full sm:max-w-2xl overflow-y-auto'>
+        <div className='py-3'>
+          {/* <h3 className='font-bold text-gray-700 mb-2 text-center'>Keyboard</h3> */}
+          <div className='bg-gray-50 py-4 max-sm:pb-0 border border-gray-200'>
+            <Keyboard
+              onKey={(char) => guessLetter(activeIndex, char)}
+              disabledKeys={disabledKeys}
+              partiallyRevealedKeys={partiallyRevealedKeys}
+              cryptogramNumbers={cryptogramNumbers}
+            />
+          </div>
+        </div>
       </div>
 
       {showModal && (
