@@ -28,6 +28,7 @@ export default function GameEngine({
 
   const [showGiveUpModal, setShowGiveUpModal] = useState(false);
   const [startTime] = useState(Date.now());
+  const [elapsedSeconds, setElapsedSeconds] = useState(0);
 
   const [attemptsUsed, setAttemptsUsed] = useState(dailyStatus?.attempts_used || 0);
   const [solved, setSolved] = useState(dailyStatus?.solved || false);
@@ -38,6 +39,16 @@ export default function GameEngine({
     solved === true ||
     attemptsUsed >= 3
   );
+
+  useEffect(() => {
+    if (!isDailyPuzzle) return;
+
+    const timerId = setInterval(() => {
+      setElapsedSeconds(Math.floor((Date.now() - startTime) / 1000));
+    }, 1000);
+
+    return () => clearInterval(timerId);
+  }, [isDailyPuzzle, startTime]);
 
 
   const {
@@ -175,6 +186,7 @@ export default function GameEngine({
   };
 
   const handleGiveUp = () => setShowGiveUpModal(true);
+  const formattedTimer = `${String(Math.floor(elapsedSeconds / 60)).padStart(2, '0')}:${String(elapsedSeconds % 60).padStart(2, '0')}`;
 
   const confirmGiveUp = async () => {
     setShowGiveUpModal(false);
@@ -228,7 +240,7 @@ export default function GameEngine({
         )}
         {isDailyPuzzle && (
           <div className="bg-yellow-100 text-center p-2 text-sm">
-            Attempts used: {attemptsUsed} / 3
+            Attempts used: {attemptsUsed} / 3 <span className="mx-2">|</span> Time: {formattedTimer}
             {solved && " – Completed!"}
             {attemptsUsed >= 3 && !solved && " – Locked for today"}
           </div>
