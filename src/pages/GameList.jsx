@@ -99,6 +99,8 @@ export default function GameList() {
                     .from("daily_puzzle_attempts")
                     .select("best_time_seconds")
                     .eq("puzzle_date", today)
+                    .order("best_time_seconds", { ascending: true })
+                    .limit(1)
                     .single();
 
                 if (error && error.code !== "PGRST116") throw error;
