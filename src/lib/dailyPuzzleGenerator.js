@@ -9,7 +9,7 @@ const GEMINI_MODEL = "gemini-2.5-flash-lite";
 const DAILY_PROMPT = `Generate a short message for a word puzzle game.
 
 Rules:
-- Length 60 to 100 characters
+- Length 40 to 80 characters
 - Family friendly
 - Mix of trivia, quotes, facts, humor
 - Single sentence
@@ -67,7 +67,7 @@ async function generateMessageWithGemini() {
     contents: DAILY_PROMPT,
     config: {
       temperature: 0.9,
-      maxOutputTokens: 120,
+      maxOutputTokens: 100,
     },
   });
 
