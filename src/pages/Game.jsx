@@ -15,51 +15,83 @@ export default function Game() {
     const [childKey, setChildKey] = useState(0);
     const [isSinglePlayer, setIsSinglePlayer] = useState(false);
     const [currentLevel, setCurrentLevel] = useState(null);
-    const containerRef = useRef(null);
+    const [isDailyPuzzle, setIsDailyPuzzle] = useState(false);
+    const [dailyStatus, setDailyStatus] = useState(null);
+
 
     useEffect(() => {
         setLoading(true);
-        // Fetch game data by ID when component mounts
+
         const fetchGame = async () => {
             try {
-                const { data, error } = await supabase
-                .from('games')
-                .select(`
-                game_id,
-                prompts!inner(prompt_text)
-                `)
-                .eq('game_id', gameId)
-                .eq('status', 'IN_PROGRESS')
-                .single();
+                // DAILY MODE
+                if (gameId === "daily") {
+                    setIsDailyPuzzle(true);
 
-                if(data) {
+                    const today = new Date().toISOString().split("T")[0];
+
+                    const { data: puzzle } = await supabase
+                        .from("daily_puzzles")
+                        .select("*")
+                        .eq("puzzle_date", today)
+                        .single();
+
+                    if (!puzzle) throw new Error("No daily puzzle found");
+
+                    setMessage(puzzle.message.toUpperCase());
+
+                    if (user) {
+                        const { data: attempt } = await supabase
+                            .from("daily_puzzle_attempts")
+                            .select("*")
+                            .eq("user_id", user.id)
+                            .eq("puzzle_date", today)
+                            .single();
+
+                        setDailyStatus(attempt);
+                    }
+
+                    setLoading(false);
+                    return;
+                }
+
+                // NORMAL GAME FLOW (existing)
+                const { data, error } = await supabase
+                    .from('games')
+                    .select(`game_id, prompts!inner(prompt_text)`)
+                    .eq('game_id', gameId)
+                    .eq('status', 'IN_PROGRESS')
+                    .single();
+
+                if (data) {
                     setMessage(data.prompts.prompt_text.toUpperCase());
                 }
 
-                if(error) throw error;
-                
+                if (error) throw error;
+
             } catch (error) {
                 console.error("Error fetching game data:", error);
             }
         };
 
         fetchGame();
-    }, [])
+    }, [gameId, user]);
+
 
     useEffect(() => {
-        setLoading(true);
+        if (isDailyPuzzle) return;
         const loadSession = async () => {
             try {
-               const { data, error } = await supabase
-                .from('game_sessions')
-                .select('*')
-                .eq('game_id', gameId)
-                .single();
+                const { data, error } = await supabase
+                    .from('game_sessions')
+                    .select('*')
+                    .eq('game_id', gameId)
+                    .single();
                 if (data) {
                     setSession(data);
                 }
-                
-                if(error) throw error;
+
+                if (error) throw error;
 
             } catch (error) {
                 console.error("Error loading session:", error);
@@ -92,7 +124,7 @@ export default function Game() {
                 if (data && data.single_player_levels?.prompts) {
                     // Get the prompt_id for the current level
                     const currentPromptId = data.single_player_levels.prompts.prompt_id;
-                    
+
                     // Check if the game is for this prompt
                     const { data: gameData } = await supabase
                         .from('games')
@@ -129,7 +161,7 @@ export default function Game() {
         }
     }, [loading, session]);
 
-     async function handleTryAgain() {
+    async function handleTryAgain() {
         setLoading(true);
         const resetSession = async () => {
             try {
@@ -148,24 +180,24 @@ export default function Game() {
                 const { data, error } = await supabase
                     .from('game_sessions')
                     .update({
-                    revealed_indices: initialRevealed,
-                    hints_used: 0,
-                    lives: 3,
-                    active_index: activeIndex,
-                    guesses
+                        revealed_indices: initialRevealed,
+                        hints_used: 0,
+                        lives: 3,
+                        active_index: activeIndex,
+                        guesses
                     })
                     .eq('session_id', session.session_id)
                     .select()
                     .single();
 
-                if(data) {
+                if (data) {
                     setSession(data);
                 }
-                
-                if(error) throw error;
+
+                if (error) throw error;
 
                 setLoading(false);
-                
+
             } catch (error) {
                 console.error("Error resetting session:", error);
                 setLoading(false);
@@ -180,15 +212,18 @@ export default function Game() {
     return (
         <>
             <Navbar />
-            <GameEngine 
-                key={childKey} 
-                gameId={gameId} 
-                message={message} 
+            <GameEngine
+                key={childKey}
+                gameId={gameId}
+                message={message}
                 session={session}
                 onTryAgain={handleTryAgain}
                 isSinglePlayer={isSinglePlayer}
                 currentLevel={currentLevel}
+                isDailyPuzzle={isDailyPuzzle}
+                dailyStatus={dailyStatus}
             />
+
         </>
     )
 }
