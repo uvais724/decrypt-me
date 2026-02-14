@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../lib/supabaseClient';
@@ -11,9 +11,42 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [showHowToPlay, setShowHowToPlay] = useState(false);
+  const [timeToBeat, setTimeToBeat] = useState(null);
+  const [recordHolder, setRecordHolder] = useState(null);
 
   const navigate = useNavigate();
   const { login } = useAuth();
+
+  useEffect(() => {
+    const fetchDailyTimeToBeat = async () => {
+      try {
+        const today = new Date().toISOString().split("T")[0];
+        const { data, error } = await supabase
+          .from("daily_puzzle_leaderboard")
+          .select("best_time_seconds, username")
+          .eq("puzzle_date", today)
+          .order("best_time_seconds", { ascending: true })
+          .limit(1)
+          .single();
+
+
+        if (error) throw error;
+
+        setTimeToBeat(data?.best_time_seconds ?? null);
+        setRecordHolder(data?.username ?? null);
+      } catch (err) {
+        console.error("Error fetching daily time to beat:", err);
+        setTimeToBeat(null);
+        setRecordHolder(null);
+      }
+    };
+
+    fetchDailyTimeToBeat();
+  }, []);
+
+  const formattedTimeToBeat = timeToBeat == null
+    ? "--"
+    : `${String(Math.floor(timeToBeat / 60)).padStart(2, "0")}:${String(timeToBeat % 60).padStart(2, "0")}`;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -198,6 +231,13 @@ export default function Login() {
             >
               Try a Puzzle First
             </button>
+
+            <div className="rounded-lg border border-base-300 bg-base-200 p-3 mb-4 text-left">
+              <div className="text-sm font-semibold">Daily Puzzle</div>
+              <div className="text-sm mt-1">Time to beat: <span className="font-bold">{formattedTimeToBeat}</span></div>
+              <div className="text-sm">Set by: <span className="font-bold">{recordHolder || "--"}</span></div>
+              <div className="text-xs text-base-content/70 mt-2">Login to play daily puzzle.</div>
+            </div>
 
             <form onSubmit={handleSubmit} className="space-y-4">
 
