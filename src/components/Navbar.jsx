@@ -156,7 +156,7 @@ export default function Navbar() {
 
                             {menuOpen && (
                                 <div 
-                                    className="absolute right-0 mt-3 z-50 p-3 shadow bg-base-100 rounded-box w-72 border border-base-300"
+                                    className="absolute right-0 mt-3 z-50 p-3 shadow bg-base-100 rounded-box min-w-52 border border-base-300"
                                     onClick={(e) => e.stopPropagation()}
                                     onMouseDown={(e) => e.stopPropagation()}
                                 >
