@@ -174,7 +174,7 @@ export default function Login() {
           >
             Guess the message.
             <br />
-            <span className="relative inline-block">
+            <span className="md:relative inline-block">
               Not just the word.
               {/* Underline glow */}
               <span
