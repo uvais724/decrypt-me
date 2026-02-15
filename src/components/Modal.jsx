@@ -41,7 +41,7 @@ export default function Modal({
     if (gamePuzzle) {
       const updateGameStatus = async () => {
         try {
-          if (!isSinglePlayer) {
+          if (!isSinglePlayer && !isDailyPuzzle) {
             const { error } = await supabase
               .from('games')
               .update({

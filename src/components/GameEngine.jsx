@@ -40,16 +40,6 @@ export default function GameEngine({
     attemptsUsed >= 3
   );
 
-  useEffect(() => {
-    if (!isDailyPuzzle) return;
-
-    const timerId = setInterval(() => {
-      setElapsedSeconds(Math.floor((Date.now() - startTime) / 1000));
-    }, 1000);
-
-    return () => clearInterval(timerId);
-  }, [isDailyPuzzle, startTime]);
-
 
   const {
     board,
@@ -83,6 +73,17 @@ export default function GameEngine({
       message
     };
   }, [lives, hintsUsed, activeIndex, isGameComplete, revealedIndices, guesses, message]);
+
+
+  useEffect(() => {
+    if (!isDailyPuzzle || solved || isGameComplete) return;
+
+    const timerId = setInterval(() => {
+      setElapsedSeconds(Math.floor((Date.now() - startTime) / 1000));
+    }, 1000);
+
+    return () => clearInterval(timerId);
+  }, [isDailyPuzzle, startTime, solved, isGameComplete]);
 
   useEffect(() => {
     if (!isDailyPuzzle || !user) return;
