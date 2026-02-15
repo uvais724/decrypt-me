@@ -4,7 +4,7 @@ import { GoogleGenAI } from "@google/genai";
 const IST_TIME_ZONE = "Asia/Kolkata";
 const IST_GENERATION_HOUR = 10;
 const ONE_DAY_MS = 24 * 60 * 60 * 1000;
-const GEMINI_MODEL = "gemini-2.5-flash-lite";
+const GEMINI_MODEL = "gemini-2.0-flash";
 
 const DAILY_PROMPT = `Generate a short message for a word puzzle game.
 
