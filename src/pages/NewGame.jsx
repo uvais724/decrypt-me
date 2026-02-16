@@ -62,6 +62,28 @@ export default function NewGame() {
             return;
         }
 
+        //check if there are already 5 messages sent to the selected user which is yet to be solved or given up if yes then don't allow the user to create a new game with that user and show an error message
+        // the sender_id is part of the prompts table and not the games table so we need to check the prompts table for the sender_id, receiver and receiver_id joined by the prompt_id in the games table and check the status of the game in the games table if it is in progress then we need to count it if the count is more than 5 then we need to show an error message and don't allow the user to create a new game with that user
+        try {
+            const { data, error } = await supabase
+                .from('games')
+                .select('*, prompts!inner(*)')
+                .eq('prompts.sender_id', user.id)
+                .eq('prompts.receiver_id', selectedUser)
+                .eq('status', 'IN_PROGRESS');
+
+            if (error) throw error;
+
+            if (data && data.length >= 5) {
+                setErrorMsg('Cannot send more than 5 games to this user. Please wait for them to be solved before sending more.');
+                return;
+            }
+        } catch (error) {
+            console.error('Error checking existing games:', error);
+            setErrorMsg('Failed to check existing games. Please try again later.');
+            return;
+        }
+
         setErrorMsg(null);
         setLoading(true);
         const promptText = e.target.Message.value.toUpperCase().trim();
