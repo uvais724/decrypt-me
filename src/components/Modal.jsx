@@ -7,6 +7,78 @@ import { useGameRefresh } from '../context/GameRefreshContext';
 import { toPng } from "html-to-image";
 import { isMobile } from '../helper/helper';
 import Share from './Share';
+import ScoreIncrement from './ScoreIncrement';
+import { incrementPairScoreWithPrevious } from '../lib/pairScore';
+
+const confettiStyles = `
+  @keyframes confettiFall {
+    0% {
+      transform: translate3d(0, -12%, 0) rotate(0deg);
+      opacity: 0;
+    }
+    10% { opacity: 1; }
+    100% {
+      transform: translate3d(var(--drift, 0px), 130%, 0) rotate(720deg);
+      opacity: 0;
+    }
+  }
+
+  .confetti-wrap {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    overflow: hidden;
+  }
+
+  .confetti-piece {
+    position: absolute;
+    top: -12%;
+    width: 10px;
+    height: 16px;
+    border-radius: 3px;
+    animation: confettiFall var(--duration, 1800ms) linear infinite;
+    animation-delay: var(--delay, 0ms);
+    will-change: transform, opacity;
+  }
+`;
+
+const CONFETTI_PIECES = [
+  { left: '6%', color: '#22c55e', drift: '-28px', delay: '80ms', duration: '1800ms' },
+  { left: '14%', color: '#3b82f6', drift: '24px', delay: '220ms', duration: '1900ms' },
+  { left: '21%', color: '#eab308', drift: '-20px', delay: '120ms', duration: '1700ms' },
+  { left: '30%', color: '#ef4444', drift: '18px', delay: '320ms', duration: '2000ms' },
+  { left: '38%', color: '#14b8a6', drift: '-24px', delay: '420ms', duration: '1850ms' },
+  { left: '46%', color: '#f97316', drift: '16px', delay: '540ms', duration: '1950ms' },
+  { left: '55%', color: '#8b5cf6', drift: '-26px', delay: '180ms', duration: '1780ms' },
+  { left: '64%', color: '#ec4899', drift: '20px', delay: '360ms', duration: '1880ms' },
+  { left: '72%', color: '#06b6d4', drift: '-16px', delay: '640ms', duration: '1980ms' },
+  { left: '80%', color: '#84cc16', drift: '28px', delay: '280ms', duration: '1750ms' },
+  { left: '88%', color: '#f59e0b', drift: '-18px', delay: '500ms', duration: '1920ms' },
+  { left: '94%', color: '#10b981', drift: '22px', delay: '700ms', duration: '2050ms' }
+];
+
+function ModalConfetti() {
+  return (
+    <>
+      <style>{confettiStyles}</style>
+      <div className="confetti-wrap" aria-hidden="true">
+        {CONFETTI_PIECES.map((piece, index) => (
+          <span
+            key={`confetti-${index}`}
+            className="confetti-piece"
+            style={{
+              left: piece.left,
+              backgroundColor: piece.color,
+              '--drift': piece.drift,
+              '--delay': piece.delay,
+              '--duration': piece.duration
+            }}
+          />
+        ))}
+      </div>
+    </>
+  );
+}
 
 export default function Modal({
   gameId,
@@ -24,6 +96,7 @@ export default function Modal({
   const dialogRef = useRef(null);
   const shareRef = useRef(null);
   const [loading, setLoading] = useState(true);
+  const [scoreIncrementData, setScoreIncrementData] = useState(null);
   const navigate = useNavigate();
   const { user } = useAuth();
   const { triggerRefresh } = useGameRefresh();
@@ -41,7 +114,7 @@ export default function Modal({
     if (gamePuzzle) {
       const updateGameStatus = async () => {
         try {
-          if (!isSinglePlayer && !isDailyPuzzle) {
+          if (!isSinglePlayer && !isDailyPuzzle && !isDemo) {
             const { error } = await supabase
               .from('games')
               .update({
@@ -51,6 +124,20 @@ export default function Modal({
               .eq('game_id', gameId);
 
             if (error) throw error;
+
+            const { data: gameData, error: gameError } = await supabase
+              .from('games')
+              .select('prompts!inner(sender_id)')
+              .eq('game_id', gameId)
+              .eq('prompts.receiver_id', user.id)
+              .single();
+
+            if (gameError) throw gameError;
+
+            const senderId = gameData.prompts.sender_id;
+
+            const scoreData = await incrementPairScoreWithPrevious(senderId, user.id, 1);
+            setScoreIncrementData(scoreData);
           }
 
 
@@ -161,7 +248,8 @@ export default function Modal({
   return (
     <>
       <dialog ref={dialogRef} className="modal">
-        <div className="modal-box text-center">
+        <div className="modal-box text-center relative overflow-hidden">
+          {gameResult !== "Game Over!" && <ModalConfetti />}
           <h3 className="font-bold text-lg">{gameResult}</h3>
 
           {gamePuzzle && (
@@ -171,6 +259,15 @@ export default function Modal({
                 <p>{gamePuzzle}</p>
               </blockquote>
             </>
+          )}
+
+          {scoreIncrementData && (
+            <ScoreIncrement
+              previousScore={scoreIncrementData.previousScore}
+              currentScore={scoreIncrementData.currentScore}
+              incrementBy={scoreIncrementData.incrementBy}
+              label="Pair Score"
+            />
           )}
 
           <div className="mt-4 flex justify-center gap-4">
