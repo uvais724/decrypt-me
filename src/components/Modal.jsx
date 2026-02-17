@@ -7,6 +7,8 @@ import { useGameRefresh } from '../context/GameRefreshContext';
 import { toPng } from "html-to-image";
 import { isMobile } from '../helper/helper';
 import Share from './Share';
+import ScoreIncrement from './ScoreIncrement';
+import { incrementPairScoreWithPrevious } from '../lib/pairScore';
 
 export default function Modal({
   gameId,
@@ -24,6 +26,7 @@ export default function Modal({
   const dialogRef = useRef(null);
   const shareRef = useRef(null);
   const [loading, setLoading] = useState(true);
+  const [scoreIncrementData, setScoreIncrementData] = useState(null);
   const navigate = useNavigate();
   const { user } = useAuth();
   const { triggerRefresh } = useGameRefresh();
@@ -63,13 +66,8 @@ export default function Modal({
 
             const senderId = gameData.prompts.sender_id;
 
-            const { error: errorScoreIncrement } = await supabase.rpc("increment_pair_score", {
-              uid1: senderId,
-              uid2: user.id,
-              inc: 1
-            });
-
-            if (errorScoreIncrement) throw errorScoreIncrement;
+            const scoreData = await incrementPairScoreWithPrevious(senderId, user.id, 1);
+            setScoreIncrementData(scoreData);
           }
 
 
@@ -190,6 +188,15 @@ export default function Modal({
                 <p>{gamePuzzle}</p>
               </blockquote>
             </>
+          )}
+
+          {scoreIncrementData && (
+            <ScoreIncrement
+              previousScore={scoreIncrementData.previousScore}
+              currentScore={scoreIncrementData.currentScore}
+              incrementBy={scoreIncrementData.incrementBy}
+              label="Pair Score"
+            />
           )}
 
           <div className="mt-4 flex justify-center gap-4">

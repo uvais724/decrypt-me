@@ -3,7 +3,9 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import Navbar from '../components/Navbar';
 import Loading from '../components/Loading';
+import ScoreIncrement from '../components/ScoreIncrement';
 import { supabase } from '../lib/supabaseClient';
+import { incrementPairScoreWithPrevious } from '../lib/pairScore';
 import { setDifficultyLevel, generateCryptogramMap, pickRandomIndices, initializeGuesses, findFirstUnrevealed } from '../helper/helper.js'
 
 export default function NewGame() {
@@ -13,8 +15,20 @@ export default function NewGame() {
     const [relatedUsers, setRelatedUsers] = useState([]);
     const [selectedUser, setSelectedUser] = useState('');
     const [loading, setLoading] = useState(true);
+    const [submitting, setSubmitting] = useState(false);
     const [message, setMessage] = useState(location.state?.message || '');
     const [errorMsg, setErrorMsg] = useState('');
+    const [scoreIncrementData, setScoreIncrementData] = useState(null);
+
+    useEffect(() => {
+        if (!scoreIncrementData) return;
+
+        const timer = setTimeout(() => {
+            navigate('/');
+        }, 1700);
+
+        return () => clearTimeout(timer);
+    }, [scoreIncrementData, navigate]);
 
     useEffect(() => {
         const fetchRelatedUsers = async () => {
@@ -85,12 +99,12 @@ export default function NewGame() {
         }
 
         setErrorMsg(null);
-        setLoading(true);
+        setSubmitting(true);
         const promptText = e.target.Message.value.toUpperCase().trim();
         const alphabetsMatch = promptText.match(/[A-Z]/g) || [];
         if (alphabetsMatch.length < 10) {
             setErrorMsg('Prompt must be at least 10 alphabetic characters long.');
-            setLoading(false);
+            setSubmitting(false);
             return;
         }
 
@@ -98,6 +112,7 @@ export default function NewGame() {
             const difficulty = setDifficultyLevel(promptText);
             const cryptogramMap = generateCryptogramMap(promptText);
             let revealedCharCount = difficulty === 'medium' ? 5 : difficulty === 'hard' ? 8 : 3;
+            let didUpdateScore = false;
 
             const chars = promptText.split("");
             const revealedIndices = pickRandomIndices(chars, revealedCharCount);
@@ -121,22 +136,22 @@ export default function NewGame() {
 
             if (data) console.log('New game created with ID:', data);
 
-            const { error: scoreError } = await supabase.rpc("increment_pair_score", {
-                uid1: user.id,
-                uid2: selectedUser,
-                inc: 1
-            });
-
-            if (scoreError) {
+            try {
+                const scoreData = await incrementPairScoreWithPrevious(user.id, selectedUser, 1);
+                setScoreIncrementData(scoreData);
+                didUpdateScore = true;
+            } catch (scoreError) {
                 console.error("Error incrementing pair score:", scoreError);
             }
 
-            setLoading(false);
-            navigate('/');
+            setSubmitting(false);
+            if (!didUpdateScore) {
+                navigate('/');
+            }
         } catch (error) {
             console.error(error);
             setErrorMsg('Failed to create a new game. Please try again later.');
-            setLoading(false);
+            setSubmitting(false);
         }
     };
 
@@ -168,7 +183,7 @@ export default function NewGame() {
                                 value={selectedUser}
                                 onChange={(e) => setSelectedUser(e.target.value)}
                                 className="select select-bordered w-full"
-                                disabled={loading}
+                                disabled={loading || submitting}
                             >
                                 <option value="">
                                     {loading ? 'Loading users...' : 'Select a user'}
@@ -200,13 +215,35 @@ export default function NewGame() {
                             </div>
 
                             <div className="card-actions justify-end mt-4">
-                                <button type="submit" className="btn btn-primary">Create</button>
-                                <button type="button" className="btn" onClick={() => navigate('/')}>Cancel</button>
+                                <button type="submit" className="btn btn-primary" disabled={submitting}>
+                                    {submitting ? 'Creating...' : 'Create'}
+                                </button>
+                                <button type="button" className="btn" onClick={() => navigate('/')} disabled={submitting}>Cancel</button>
                             </div>
                         </form>
                     </div>
                 </div>
             </div>
+
+            {scoreIncrementData && (
+                <div className="modal modal-open">
+                    <div className="modal-box text-center">
+                        <h3 className="font-bold text-lg">Game Created</h3>
+                        <p className="mt-1 text-base-content/70">Pair score updated successfully.</p>
+                        <ScoreIncrement
+                            previousScore={scoreIncrementData.previousScore}
+                            currentScore={scoreIncrementData.currentScore}
+                            incrementBy={scoreIncrementData.incrementBy}
+                            label="Pair Score"
+                        />
+                        <div className="modal-action justify-center">
+                            <button className="btn btn-primary" onClick={() => navigate('/')}>
+                                Continue
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </>
     )
 }
