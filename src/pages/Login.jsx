@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../lib/supabaseClient';
 import HowToPlay from '../components/HowToPlay';
+import Leaderboard from '../components/Leaderboard';
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -143,7 +144,7 @@ export default function Login() {
     <div className="min-h-screen bg-linear-to-br from-blue-600 to-blue-800 flex items-center justify-center p-4">
       <HowToPlay isOpen={showHowToPlay} onClose={() => setShowHowToPlay(false)} />
 
-      <div className="w-full max-w-md text-center">
+      <div className="w-full max-w-5xl text-center">
         <div className="hidden">
           <div className="card-body p-4">
             <div className="flex items-center justify-between">
@@ -258,9 +259,10 @@ export default function Login() {
 
         </div>
 
-        {/* Card */}
-        <div className="card bg-base-100 shadow-2xl">
-          <div className="card-body">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+          {/* Card */}
+          <div className="card bg-base-100 shadow-2xl">
+            <div className="card-body">
 
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-2xl font-bold">
@@ -393,7 +395,10 @@ export default function Login() {
               )}
             </button>
 
+            </div>
           </div>
+
+          <Leaderboard />
         </div>
       </div>
     </div>
