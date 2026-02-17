@@ -21,16 +21,6 @@ export default function NewGame() {
     const [scoreIncrementData, setScoreIncrementData] = useState(null);
 
     useEffect(() => {
-        if (!scoreIncrementData) return;
-
-        const timer = setTimeout(() => {
-            navigate('/');
-        }, 1700);
-
-        return () => clearTimeout(timer);
-    }, [scoreIncrementData, navigate]);
-
-    useEffect(() => {
         const fetchRelatedUsers = async () => {
             try {
                 const userId = user.id;
