@@ -41,7 +41,7 @@ export default function Modal({
     if (gamePuzzle) {
       const updateGameStatus = async () => {
         try {
-          if (!isSinglePlayer && !isDailyPuzzle) {
+          if (!isSinglePlayer && !isDailyPuzzle && !isDemo) {
             const { error } = await supabase
               .from('games')
               .update({
@@ -51,6 +51,25 @@ export default function Modal({
               .eq('game_id', gameId);
 
             if (error) throw error;
+
+            const { data: gameData, error: gameError } = await supabase
+              .from('games')
+              .select('prompts!inner(sender_id)')
+              .eq('game_id', gameId)
+              .eq('prompts.receiver_id', user.id)
+              .single();
+
+            if (gameError) throw gameError;
+
+            const senderId = gameData.prompts.sender_id;
+
+            const { error: errorScoreIncrement } = await supabase.rpc("increment_pair_score", {
+              uid1: senderId,
+              uid2: user.id,
+              inc: 1
+            });
+
+            if (errorScoreIncrement) throw errorScoreIncrement;
           }
 
 

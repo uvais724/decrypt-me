@@ -121,6 +121,16 @@ export default function NewGame() {
 
             if (data) console.log('New game created with ID:', data);
 
+            const { error: scoreError } = await supabase.rpc("increment_pair_score", {
+                uid1: user.id,
+                uid2: selectedUser,
+                inc: 1
+            });
+
+            if (scoreError) {
+                console.error("Error incrementing pair score:", scoreError);
+            }
+
             setLoading(false);
             navigate('/');
         } catch (error) {
