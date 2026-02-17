@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../lib/supabaseClient';
@@ -15,6 +15,7 @@ export default function Login() {
   const [timeToBeat, setTimeToBeat] = useState(null);
   const [recordHolder, setRecordHolder] = useState(null);
   const [resetCountdown, setResetCountdown] = useState('--:--:--');
+  const leaderboardRef = useRef(null);
 
   const navigate = useNavigate();
   const { login } = useAuth();
@@ -140,6 +141,10 @@ export default function Login() {
     }
   };
 
+  const scrollToLeaderboard = () => {
+    leaderboardRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+
   return (
     <div className="min-h-screen bg-linear-to-br from-blue-600 to-blue-800 flex items-center justify-center p-4">
       <HowToPlay isOpen={showHowToPlay} onClose={() => setShowHowToPlay(false)} />
@@ -257,11 +262,19 @@ export default function Login() {
             Decode hidden messages. Send your own. Play solo or with someone you care about.
           </p>
 
+          <button
+            type="button"
+            onClick={scrollToLeaderboard}
+            className="btn btn-outline btn-sm mt-5 text-white border-white/60 hover:bg-white hover:text-blue-700"
+          >
+            View Leaderboard
+          </button>
+
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+        <div className="flex flex-col items-center gap-6">
           {/* Card */}
-          <div className="card bg-base-100 shadow-2xl">
+          <div className="card bg-base-100 shadow-2xl w-full max-w-md">
             <div className="card-body">
 
             <div className="flex items-center justify-between mb-4">
@@ -398,7 +411,9 @@ export default function Login() {
             </div>
           </div>
 
-          <Leaderboard />
+          <div ref={leaderboardRef} className="w-full max-w-3xl">
+            <Leaderboard />
+          </div>
         </div>
       </div>
     </div>
