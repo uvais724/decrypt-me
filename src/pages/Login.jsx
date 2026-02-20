@@ -23,20 +23,19 @@ export default function Login() {
   useEffect(() => {
     const fetchDailyTimeToBeat = async () => {
       try {
-        const today = new Date().toISOString().split("T")[0];
-        const { data, error } = await supabase
-          .from("daily_puzzle_leaderboard")
-          .select("best_time_seconds, username")
-          .eq("puzzle_date", today)
-          .order("best_time_seconds", { ascending: true })
-          .limit(1)
-          .single();
+        const { data, error } = await supabase.rpc(
+          "get_daily_puzzle_leaderboard",
+          { limit_count: 1 }
+        );
 
 
         if (error) throw error;
 
-        setTimeToBeat(data?.best_time_seconds ?? null);
-        setRecordHolder(data?.username ?? null);
+        const today = new Date().toISOString().split("T")[0];
+        const todayRow = data?.find(row => row.puzzle_date === today);
+
+        setTimeToBeat(todayRow?.best_time_seconds ?? null);
+        setRecordHolder(todayRow?.username ?? null);
       } catch (err) {
         console.error("Error fetching daily time to beat:", err);
         setTimeToBeat(null);

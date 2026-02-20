@@ -25,7 +25,7 @@ export default function Leaderboard() {
 
   useEffect(() => {
     const fetchLeaderboard = async () => {
-      const { data, error } = await supabase.rpc('get_leaderboard', { limit_count: 50 });
+      const { data, error } = await supabase.rpc('get_leaderboard', { limit_count: 10 });
       if (error) {
         console.error('Error fetching leaderboard:', error);
         return;
