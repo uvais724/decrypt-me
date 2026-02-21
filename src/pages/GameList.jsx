@@ -238,11 +238,11 @@ export default function GameList() {
                                     )}
                                 </div>
 
-                                <div className="grid grid-cols-3 gap-4 mt-4">
+                                <div className="xs:flex-col sm:grid sm:grid-cols-3 sm:gap-4 mt-4">
 
                                     <div className="stat bg-base-200 rounded p-2">
                                         <div className="stat-title text-sm text-wrap">Your Best Time</div>
-                                        <div className="stat-value text-lg">
+                                        <div className="stat-value text-lg text-indigo-700">
                                             {dailyStatus && dailyStatus.best_time_seconds
                                                 ? `${dailyStatus.best_time_seconds}s`
                                                 : "—"}
@@ -251,14 +251,14 @@ export default function GameList() {
 
                                     <div className="stat bg-base-200 rounded p-2">
                                         <div className="stat-title text-sm text-wrap">Your Attempts</div>
-                                        <div className="stat-value text-lg">
+                                        <div className="stat-value text-lg text-indigo-700">
                                             {dailyStatus?.attempts_used ?? 0} / 3
                                         </div>
                                     </div>
 
                                     <div className="stat bg-base-200 rounded p-2">
                                         <div className="stat-title text-sm text-wrap">Time To Beat</div>
-                                        <div className="stat-value text-lg">
+                                        <div className="stat-value text-lg text-indigo-700">
                                             {timeToBeat ? `${timeToBeat}s` : "—"}
                                             
                                             {dailyStatus?.best_time_seconds && timeToBeat && dailyStatus.best_time_seconds <= timeToBeat && (
