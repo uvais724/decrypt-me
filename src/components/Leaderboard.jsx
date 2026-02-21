@@ -20,6 +20,7 @@ const rankBadgeClass = (rank) => {
   if (rank === 3) return 'badge badge-accent badge-sm';
   return 'badge badge-ghost badge-sm';
 };
+const TOP_LIMIT = 10;
 
 export default function Leaderboard() {
   const [topActualRecord, setTopActualRecord] = useState(null);
@@ -59,7 +60,7 @@ export default function Leaderboard() {
   const leaderboardState = useMemo(() => {
     if (!actualRow) {
       return {
-        rankedRows: dummyLeaderboard,
+        rankedRows: dummyLeaderboard.slice(0, TOP_LIMIT),
         showSeparator: true,
         belowSeparatorRow: null,
         actualInRanked: false
@@ -69,7 +70,7 @@ export default function Leaderboard() {
     const insertionIndex = dummyLeaderboard.findIndex((row) => actualRow.score > row.score);
     if (insertionIndex === -1) {
       return {
-        rankedRows: dummyLeaderboard,
+        rankedRows: dummyLeaderboard.slice(0, TOP_LIMIT),
         showSeparator: true,
         belowSeparatorRow: actualRow,
         actualInRanked: false
@@ -78,9 +79,10 @@ export default function Leaderboard() {
 
     const rankedRows = [...dummyLeaderboard];
     rankedRows.splice(insertionIndex, 0, actualRow);
+    const topRankedRows = rankedRows.slice(0, TOP_LIMIT);
 
     return {
-      rankedRows,
+      rankedRows: topRankedRows,
       showSeparator: false,
       belowSeparatorRow: null,
       actualInRanked: true
