@@ -115,6 +115,21 @@ export default function Modal({
       const updateGameStatus = async () => {
         try {
           if (!isSinglePlayer && !isDailyPuzzle && !isDemo) {
+
+            const { data: gameData, error: gameError } = await supabase
+              .from('games')
+              .select('prompts!inner(sender_id)')
+              .eq('game_id', gameId)
+              .eq('prompts.receiver_id', user.id)
+              .single();
+
+            if(gameData) {
+              const senderId = gameData.prompts.sender_id;
+
+              const scoreData = await incrementPairScoreWithPrevious(senderId, user.id, 1);
+              setScoreIncrementData(scoreData);
+            }
+
             const { error } = await supabase
               .from('games')
               .update({
@@ -124,22 +139,7 @@ export default function Modal({
               .eq('game_id', gameId);
 
             if (error) throw error;
-
-            const { data: gameData, error: gameError } = await supabase
-              .from('games')
-              .select('prompts!inner(sender_id)')
-              .eq('game_id', gameId)
-              .eq('prompts.receiver_id', user.id)
-              .single();
-
-            if (gameError) throw gameError;
-
-            const senderId = gameData.prompts.sender_id;
-
-            const scoreData = await incrementPairScoreWithPrevious(senderId, user.id, 1);
-            setScoreIncrementData(scoreData);
           }
-
 
           // If single player, increment the level
           if (isSinglePlayer && currentLevel !== null) {
