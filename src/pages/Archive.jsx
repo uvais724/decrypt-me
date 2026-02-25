@@ -56,7 +56,7 @@ export default function Archive() {
           sent: game.prompts?.sender?.username ?? 'Unknown',
           received: game.prompts?.receiver?.username ?? 'Unknown',
           message: game.prompts?.prompt_text ?? '',
-          created_at: game.created_at
+          started_at: game.started_at
         }));
 
         setRows(mappedRows);
@@ -115,8 +115,8 @@ export default function Archive() {
         cellClass: 'cursor-pointer text-primary underline underline-offset-2'
       },
       {
-        headerName: 'Created At',
-        field: 'created_at',
+        headerName: 'Started At',
+        field: 'started_at',
         sortable: true,
         filter: true,
         minWidth: 200,
@@ -184,7 +184,7 @@ export default function Archive() {
           </div>
 
           <div className="mt-4 max-h-[52vh] overflow-y-auto rounded-xl border border-base-300 bg-base-200/60 p-4">
-            <p className="whitespace-pre-wrap break-words leading-relaxed text-base-content">
+            <p className="whitespace-pre-wrap wrap-break-word leading-relaxed text-base-content">
               {selectedMessage}
             </p>
           </div>
