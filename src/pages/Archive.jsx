@@ -16,6 +16,7 @@ export default function Archive() {
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [selectedMessage, setSelectedMessage] = useState('');
 
   useEffect(() => {
     if (!user?.id) return;
@@ -50,6 +51,8 @@ export default function Archive() {
 
         const mappedRows = (data ?? []).map((game) => ({
           gameId: game.game_id,
+          sentUserId: game.prompts?.sender_id ?? null,
+          receivedUserId: game.prompts?.receiver_id ?? null,
           sent: game.prompts?.sender?.username ?? 'Unknown',
           received: game.prompts?.receiver?.username ?? 'Unknown',
           message: game.prompts?.prompt_text ?? '',
@@ -70,9 +73,47 @@ export default function Archive() {
 
   const columnDefs = useMemo(
     () => [
-      { headerName: 'Sent', field: 'sent', sortable: true, filter: true, minWidth: 160, flex: 1 },
-      { headerName: 'Received', field: 'received', sortable: true, filter: true, minWidth: 160, flex: 1 },
-      { headerName: 'Message', field: 'message', sortable: true, filter: true, minWidth: 280, flex: 2 },
+      {
+        headerName: 'Sent',
+        field: 'sent',
+        sortable: true,
+        filter: true,
+        minWidth: 160,
+        flex: 1,
+        cellRenderer: (params) => {
+          const isCurrentUser = params.data?.sentUserId === user?.id;
+          return (
+            <span className={isCurrentUser ? 'font-bold text-indigo-600' : ''}>
+              {params.value}
+            </span>
+          );
+        }
+      },
+      {
+        headerName: 'Received',
+        field: 'received',
+        sortable: true,
+        filter: true,
+        minWidth: 160,
+        flex: 1,
+        cellRenderer: (params) => {
+          const isCurrentUser = params.data?.receivedUserId === user?.id;
+          return (
+            <span className={isCurrentUser ? 'font-bold text-indigo-600' : ''}>
+              {params.value}
+            </span>
+          );
+        }
+      },
+      {
+        headerName: 'Message',
+        field: 'message',
+        sortable: true,
+        filter: true,
+        minWidth: 280,
+        flex: 2,
+        cellClass: 'cursor-pointer text-primary underline underline-offset-2'
+      },
       {
         headerName: 'Created At',
         field: 'created_at',
@@ -83,7 +124,7 @@ export default function Archive() {
         valueFormatter: ({ value }) => (value ? new Date(value).toLocaleString() : '')
       }
     ],
-    []
+    [user?.id]
   );
 
   const defaultColDef = useMemo(
@@ -120,12 +161,44 @@ export default function Archive() {
                   pagination={true}
                   paginationPageSize={10}
                   animateRows={true}
+                  onCellClicked={(params) => {
+                    if (params.colDef.field === 'message' && params.value) {
+                      setSelectedMessage(params.value);
+                    }
+                  }}
                 />
               </div>
             )}
           </div>
         </div>
       </div>
+
+      <dialog className={`modal ${selectedMessage ? 'modal-open' : ''}`}>
+        <div className="modal-box max-w-3xl border border-indigo-200 bg-base-100 shadow-2xl">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <h3 className="text-xl font-extrabold text-indigo-700">Archived Message</h3>
+              <p className="text-sm text-base-content/70">Full puzzle text from this solved game.</p>
+            </div>
+            <span className="badge badge-primary badge-outline">History</span>
+          </div>
+
+          <div className="mt-4 max-h-[52vh] overflow-y-auto rounded-xl border border-base-300 bg-base-200/60 p-4">
+            <p className="whitespace-pre-wrap break-words leading-relaxed text-base-content">
+              {selectedMessage}
+            </p>
+          </div>
+
+          <div className="modal-action">
+            <button className="btn btn-primary" onClick={() => setSelectedMessage('')}>Close</button>
+          </div>
+        </div>
+        <form method="dialog" className="modal-backdrop">
+          <button aria-label="Close message dialog" onClick={() => setSelectedMessage('')}>
+            close
+          </button>
+        </form>
+      </dialog>
     </>
   );
 }
