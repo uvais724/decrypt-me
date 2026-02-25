@@ -244,6 +244,7 @@ export default function Navbar() {
                 </div>
                 <nav className="flex flex-col gap-2 p-4">
                     <Link to="/" className="btn btn-ghost justify-start">Games</Link>
+                    <Link to="/archive" className="btn btn-ghost justify-start">Archive</Link>
                     <Link to="/invite" className="btn btn-ghost justify-start">Invites</Link>
                     <Link to="/send-invite" className="btn btn-ghost justify-start">Send Invite</Link>
                     <Link to="/new-game" className="btn btn-ghost justify-start">New Game</Link>
