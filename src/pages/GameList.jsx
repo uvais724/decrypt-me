@@ -140,6 +140,7 @@ export default function GameList() {
                         difficulty_level: g.difficulty_level,
                         prompt_text: g.prompts.prompt_text,
                         sender: g.prompts.users.username,
+                        sender_id: g.prompts.sender_id,
                         lives_left: g.game_sessions?.[0]?.lives ?? g.lives_left,
                         hints_used: g.game_sessions?.[0]?.hints_used ?? g.hints_used,
                         revealed_indices: g.game_sessions?.[0]?.revealed_indices ?? []
@@ -331,7 +332,7 @@ export default function GameList() {
                                     )}
 
                                     <div className="card-actions justify-end mt-2">
-                                        <Link to={`/${game.game_id}`} state={{ gameId: game.game_id }}>
+                                        <Link to={`/${game.game_id}`} state={{ gameId: game.game_id, senderId: game.sender_id }}>
                                             <button className="btn btn-primary btn-sm" disabled={loading}>Play</button>
                                         </Link>
                                     </div>

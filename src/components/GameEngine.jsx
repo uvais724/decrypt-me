@@ -13,6 +13,7 @@ import { useNavigate } from 'react-router-dom';
 
 export default function GameEngine({
   gameId,
+  senderId,
   message,
   session,
   onTryAgain,
@@ -294,6 +295,7 @@ export default function GameEngine({
       {showModal && (
         <Modal
           gameId={gameId}
+          senderId={senderId}
           sessionId={session?.session_id}
           gameResult={lives === 0 ? "Game Over!" : "You Won!"}
           gamePuzzle={isGameComplete ? message : undefined}

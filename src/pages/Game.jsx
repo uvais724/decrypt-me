@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import GameEngine from '../components/GameEngine';
-import { useParams } from 'react-router-dom';
+import { useParams, useLocation } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import Loading from '../components/Loading';
 import { supabase } from '../lib/supabaseClient';
@@ -8,6 +8,9 @@ import { useAuth } from '../context/AuthContext';
 
 export default function Game() {
     const { gameId } = useParams();
+    const location = useLocation();
+    const senderId = location.state.senderId;
+    
     const { user } = useAuth();
     const [session, setSession] = useState(undefined);
     const [loading, setLoading] = useState(true);
@@ -182,6 +185,7 @@ export default function Game() {
             <GameEngine 
                 key={childKey} 
                 gameId={gameId} 
+                senderId={senderId}
                 message={message} 
                 session={session}
                 onTryAgain={handleTryAgain}
