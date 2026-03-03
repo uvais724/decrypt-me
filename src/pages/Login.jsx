@@ -112,12 +112,9 @@ export default function Login() {
       const { data, error: oauthError } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/auth/callback`,
-          // queryParams: {
-          //   access_type: 'offline',
-          //   prompt: 'consent',
-          // },
-        },
+          // Force the final redirect to go through your proxy worker
+          redirectTo: 'https://supabase-api-proxy.uvais724.workers.dev/auth/v1/callback'
+        }
       });
 
       if (oauthError) {
