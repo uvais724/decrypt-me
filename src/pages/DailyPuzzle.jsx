@@ -1,6 +1,5 @@
 //DailyPuzzle.jsx
 import { useState, useEffect } from 'react'
-import Navbar from '../components/Navbar'
 import GameEngine from '../components/GameEngine'
 import Loading from '../components/Loading'
 import { supabase } from '../lib/supabaseClient'
@@ -107,8 +106,6 @@ export default function DailyPuzzle() {
 
     return (
         <>
-            <Navbar />
-
             {showStartOverlay && (
                 <div className="min-h-screen bg-linear-to-br from-blue-50 to-indigo-100 flex items-center justify-center px-4">
                     <div className="bg-white shadow-lg w-full max-w-xl p-6 sm:p-8 text-center space-y-4">

@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { supabase } from '../lib/supabaseClient';
 import { useAuth } from '../context/AuthContext';
-import Navbar from '../components/Navbar';
 import Loading from '../components/Loading';
 import { AgGridReact } from 'ag-grid-react';
 // import 'ag-grid-community/styles/ag-grid.css';
@@ -138,7 +137,6 @@ export default function Archive() {
 
   return (
     <>
-      <Navbar />
       <div className="container mx-auto p-6">
         <h1 className="text-3xl font-extrabold mb-6">Solved Games Archive</h1>
 

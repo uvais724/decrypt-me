@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import Navbar from '../components/Navbar';
 import Loading from '../components/Loading';
 import { supabase } from '../lib/supabaseClient';
 import { useAuth } from '../context/AuthContext';
@@ -137,8 +136,6 @@ export default function Invites() {
 
   return (
     <>
-      <Navbar />
-
       <div className="container mx-auto p-6">
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-3xl font-extrabold mb-6">Invites</h1>

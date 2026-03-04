@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import Navbar from '../components/Navbar';
 import Loading from '../components/Loading';
 import ScoreIncrement from '../components/ScoreIncrement';
 import { supabase } from '../lib/supabaseClient';
@@ -149,7 +148,6 @@ export default function NewGame() {
 
     return (
         <>
-            <Navbar />
             <div className="min-h-screen flex items-center justify-center bg-base-200 p-6">
                 <div className="card w-full max-w-lg shadow-xl bg-base-100">
                     <div className="card-body">

@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabaseClient';
-import Navbar from '../components/Navbar';
 
 export default function CuratedPacks() {
     const navigate = useNavigate();
@@ -95,7 +94,6 @@ export default function CuratedPacks() {
 
     return (
         <>
-            <Navbar />
             <div className="min-h-screen bg-linear-to-b from-slate-900 to-slate-800 py-12 px-4 sm:px-6 lg:px-8">
                 <div className="max-w-4xl mx-auto">
                     <div className="text-center mb-12">

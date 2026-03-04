@@ -3,7 +3,6 @@ import { Link } from 'react-router-dom';
 import { supabase } from '../lib/supabaseClient';
 import { useAuth } from '../context/AuthContext';
 import { useGameRefresh } from '../context/GameRefreshContext';
-import Navbar from '../components/Navbar';
 import Loading from '../components/Loading';
 import SinglePlayer from '../components/SinglePlayer';
 
@@ -201,7 +200,6 @@ export default function GameList() {
     return (
         <>
             <style>{styles}</style>
-            <Navbar />
             {showNotification && (
                 <div className={`fixed top-0 left-0 right-0 z-50 ${fadeOut ? 'notification-fade-out' : ''}`}>
                     <div className="bg-info text-info-content px-6 py-4 shadow-lg">

@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import Navbar from '../components/Navbar';
 import { Link } from 'react-router-dom';
 import { supabase } from '../lib/supabaseClient';
 import { useAuth } from '../context/AuthContext';
@@ -111,7 +110,6 @@ export default function SendInvite() {
 
   return (
     <>
-      <Navbar />
       <div className="flex justify-center mt-8">
         <div className="card w-full max-w-md bg-base-100 shadow-xl">
           <div className="card-body">

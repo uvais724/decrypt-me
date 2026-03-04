@@ -1,7 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import GameEngine from '../components/GameEngine';
 import { useParams, useLocation } from 'react-router-dom';
-import Navbar from '../components/Navbar';
 import Loading from '../components/Loading';
 import { supabase } from '../lib/supabaseClient';
 import { useAuth } from '../context/AuthContext';
@@ -180,18 +179,15 @@ export default function Game() {
     if (loading || !session) return <Loading />;
 
     return (
-        <>
-            <Navbar />
-            <GameEngine 
-                key={childKey} 
-                gameId={gameId} 
-                senderId={senderId}
-                message={message} 
-                session={session}
-                onTryAgain={handleTryAgain}
-                isSinglePlayer={isSinglePlayer}
-                currentLevel={currentLevel}
-            />
-        </>
+        <GameEngine 
+            key={childKey} 
+            gameId={gameId} 
+            senderId={senderId}
+            message={message} 
+            session={session}
+            onTryAgain={handleTryAgain}
+            isSinglePlayer={isSinglePlayer}
+            currentLevel={currentLevel}
+        />
     )
 }
