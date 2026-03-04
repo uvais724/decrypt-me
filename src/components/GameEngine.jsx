@@ -121,13 +121,18 @@ export default function GameEngine({
 
     const updateAttempts = async () => {
       if (isGameComplete && !solved) {
+        
+        // ensure we use a concrete value when upserting (setState is async)
+        const newAttempts = attemptsUsed === 0 ? 1 : attemptsUsed;
+        if (newAttempts !== attemptsUsed) setAttemptsUsed(newAttempts);
+
         const finishTime = Math.floor((Date.now() - startTime) / 1000);
 
         const { data, error } = await supabase.from("daily_puzzle_attempts").upsert({
           user_id: user.id,
           puzzle_date: new Date().toISOString().split("T")[0],
           solved: true,
-          attempts_used: attemptsUsed,
+          attempts_used: newAttempts,
           best_time_seconds: finishTime
         });
         console.log("Upserted daily puzzle completion:", data);
