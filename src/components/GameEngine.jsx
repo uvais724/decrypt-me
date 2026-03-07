@@ -123,8 +123,8 @@ export default function GameEngine({
       if (isGameComplete && !solved) {
         
         // ensure we use a concrete value when upserting (setState is async)
-        const newAttempts = attemptsUsed === 0 ? 1 : attemptsUsed;
-        if (newAttempts !== attemptsUsed) setAttemptsUsed(newAttempts);
+        const newAttempts = attemptsUsed + 1;
+        setAttemptsUsed(newAttempts);
 
         const finishTime = Math.floor((Date.now() - startTime) / 1000);
 
