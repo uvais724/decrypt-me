@@ -330,8 +330,8 @@ export default function GameList() {
                                     )}
 
                                     <div className="card-actions justify-end mt-2">
-                                        <Link to={`/${game.game_id}`} state={{ gameId: game.game_id, senderId: game.sender_id }}>
-                                            <button className="btn btn-primary btn-sm" disabled={loading}>Play</button>
+                                        <Link className="btn btn-primary btn-sm" to={`/${game.game_id}`} state={{ gameId: game.game_id, senderId: game.sender_id }}>
+                                            Play
                                         </Link>
                                     </div>
                                 </div>
