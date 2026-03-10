@@ -169,6 +169,12 @@ export default function Modal({
           return;
         }
 
+        if (gameResult === "Game Over!") {
+          onTryAgain();
+          navigate('/');
+          return;
+        }
+
         const deleteSession = async () => {
             try {
                 const { error } = await supabase
@@ -199,11 +205,14 @@ export default function Modal({
             }
         };
 
-        await deleteSession();
+        if(gameResult === "You Won!") {
+          await deleteSession();
+        }
+        
         if (isSinglePlayer) {
             await deleteGame();
         }
-
+        
         dialogRef.current?.close();
         navigate('/');
     };
