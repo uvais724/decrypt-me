@@ -1,3 +1,13 @@
+import {
+    ALPHABET_REGEX,
+    CircularSuccessorIndex,
+    buildDerangedCryptogramMap,
+    cryptoRandomInt,
+    orderStatisticShuffle,
+    pickSpreadRandomIndices,
+    selectRandomUnrevealedIndex
+} from '../lib/cryptogramDsa.js';
+
 export function initializeGuesses(cryptogramMap, revealedIndices, message) {
     const guesses = {};
     // For revealed indices, map the character to its cryptogram number
@@ -23,56 +33,33 @@ export function generateCryptogramMap(text) {
     const letters = [...new Set(text.toUpperCase().match(/[A-Z]/g))];
     const numbers = Array.from({ length: 26 }, (_, i) => i + 1);
 
+    // Uses the Fenwick order-statistic shuffle, then Hopcroft-Karp matching to
+    // assign each prompt letter a non-obvious cipher number.
     shuffle(numbers);
 
-    const map = {};
-    letters.forEach((letter, i) => {
-        map[letter] = numbers[i];
-    });
-
-    return map;
-}
-
-export function cryptoRandomInt(min, max) {
-    const range = max - min;
-    if (range <= 0) {
-        throw new Error('Max must be greater than min.');
-    }
-
-    // Use Uint32Array for a range up to 2^32
-    const byteArray = new Uint32Array(1);
-    window.crypto.getRandomValues(byteArray);
-
-    // Get a value between 0 (inclusive) and range (exclusive)
-    const randomValue = byteArray[0] % range;
-
-    return min + randomValue;
+    return buildDerangedCryptogramMap(letters, numbers);
 }
 
 export function shuffle(array) {
-    // Fisher–Yates shuffle using crypto for better randomness
-    for (let i = array.length - 1; i > 0; i--) {
-        const j = cryptoRandomInt(0, i + 1);
-        [array[i], array[j]] = [array[j], array[i]];
-    }
-    return array;
+    // Kept as the public helper API; implemented with a Fenwick tree in
+    // cryptogramDsa.js.
+    return orderStatisticShuffle(array);
 }
 
 export function pickRandomIndices(chars, count) {
-    const result = chars
-        .map((c, i) => (/[A-Z]/.test(c) ? i : null))
-        .filter(i => i !== null)
-        .sort(() => 0.5 - Math.random())
-        .slice(0, count);
-    return result;
+    // Used during game creation to choose initial revealed cells through the
+    // DSA-backed picker instead of random-sort sampling.
+    return pickSpreadRandomIndices(chars, count);
 }
 
 
 export function findFirstUnrevealed(chars, revealed) {
-    return chars.findIndex(
-        (c, i) => /[A-Z]/.test(c) && !revealed.includes(i)
-    );
+    // Used during game creation to seed the active cell with the union-find
+    // successor index.
+    return new CircularSuccessorIndex(chars, revealed).first();
 }
+
+export { ALPHABET_REGEX, CircularSuccessorIndex, cryptoRandomInt, selectRandomUnrevealedIndex };
 
 export function isMobile() {
   const userAgent = navigator.userAgent;
