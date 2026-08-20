@@ -11,7 +11,6 @@ export default function Board({ board, onGuess, activeIndex, setActiveIndex, err
 
         board.forEach((cell, index) => {
           const isLetter = /[A-Z]/.test(cell.letter);
-          const isSpace = cell.letter === " ";
 
           if (isLetter) {
             currentGroup.push({ cell, index });

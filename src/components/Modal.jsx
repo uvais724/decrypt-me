@@ -1,14 +1,13 @@
 //Modal.jsx
 import React, { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom';
-import { supabase } from '../lib/supabaseClient';
-import { useAuth } from '../context/AuthContext';
-import { useGameRefresh } from '../context/GameRefreshContext';
+import { useAuth } from '../context/useAuth';
+import { useGameRefresh } from '../context/useGameRefresh';
 import { toPng } from "html-to-image";
 import { isMobile } from '../helper/helper';
 import Share from './Share';
 import ScoreIncrement from './ScoreIncrement';
-import { incrementPairScoreWithPrevious } from '../lib/pairScore';
+import { gameCompletionService } from '../services/GameServices';
 
 const confettiStyles = `
   @keyframes confettiFall {
@@ -96,7 +95,6 @@ export default function Modal({
 }) {
   const dialogRef = useRef(null);
   const shareRef = useRef(null);
-  const [loading, setLoading] = useState(true);
   const [scoreIncrementData, setScoreIncrementData] = useState(null);
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -115,35 +113,19 @@ export default function Modal({
     if (gamePuzzle) {
       const updateGameStatus = async () => {
         try {
-          if (!isSinglePlayer && !isDailyPuzzle && !isDemo) {
+          const scoreData = await gameCompletionService.markSolved({
+            gameId,
+            senderId,
+            receiverId: user.id,
+            isSinglePlayer,
+            currentLevel,
+            isDailyPuzzle,
+            isDemo
+          });
 
-            const { error } = await supabase
-              .from('games')
-              .update({
-                status: 'SOLVED',
-                solved_at: new Date().toISOString()
-              })
-              .eq('game_id', gameId);
-
-            if (error) throw error;
-              
-            const scoreData = await incrementPairScoreWithPrevious(senderId, user.id, 1);
+          if (scoreData) {
             setScoreIncrementData(scoreData);
-            
           }
-
-          // If single player, increment the level
-          if (isSinglePlayer && currentLevel !== null) {
-            const { error: updateError } = await supabase
-              .from('single_player_progress')
-              .update({
-                current_level: currentLevel + 1
-              })
-              .eq('user_id', user.id);
-
-            if (updateError) throw updateError;
-          }
-
         } catch (error) {
           console.error('Error updating game status:', error);
         }
@@ -175,42 +157,16 @@ export default function Modal({
           return;
         }
 
-        const deleteSession = async () => {
-            try {
-                const { error } = await supabase
-                    .from('game_sessions')
-                    .delete()
-                    .eq('session_id', sessionId);
-
-                if (error) throw error;
-
-                // Trigger refresh to update GameList
-                triggerRefresh();
-                setLoading(false);
-            } catch (error) {
-                console.error("Error deleting session:", error);
-                setLoading(false);
-            }
-        };
-
-        const deleteGame = async () => {
-            try {
-                const { error } = await supabase
-                    .from('games')
-                    .delete()
-                    .eq('game_id', gameId);
-                if (error) throw error;
-            } catch (error) {
-                console.error("Error deleting game:", error);
-            }
-        };
-
-        if(gameResult === "You Won!") {
-          await deleteSession();
-        }
-        
-        if (isSinglePlayer) {
-            await deleteGame();
+        try {
+            await gameCompletionService.closeFinishedGame({
+              gameId,
+              sessionId,
+              isSinglePlayer,
+              gameResult
+            });
+            triggerRefresh();
+        } catch (error) {
+            console.error("Error closing finished game:", error);
         }
         
         dialogRef.current?.close();

@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom';
 import { supabase } from '../lib/supabaseClient';
-import { useAuth } from '../context/AuthContext';
-import { useGameRefresh } from '../context/GameRefreshContext';
+import { useAuth } from '../context/useAuth';
+import { useGameRefresh } from '../context/useGameRefresh';
 import Loading from '../components/Loading';
 import SinglePlayer from '../components/SinglePlayer';
 

@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabaseClient';
 
 const dummyLeaderboard = [
@@ -22,6 +22,37 @@ const rankBadgeClass = (rank) => {
 };
 const TOP_LIMIT = 10;
 
+function buildLeaderboardState(actualRow) {
+  if (!actualRow) {
+    return {
+      rankedRows: dummyLeaderboard.slice(0, TOP_LIMIT),
+      showSeparator: true,
+      belowSeparatorRow: null,
+      actualInRanked: false
+    };
+  }
+
+  const insertionIndex = dummyLeaderboard.findIndex((row) => actualRow.score > row.score);
+  if (insertionIndex === -1) {
+    return {
+      rankedRows: dummyLeaderboard.slice(0, TOP_LIMIT),
+      showSeparator: true,
+      belowSeparatorRow: actualRow,
+      actualInRanked: false
+    };
+  }
+
+  const rankedRows = [...dummyLeaderboard];
+  rankedRows.splice(insertionIndex, 0, actualRow);
+
+  return {
+    rankedRows: rankedRows.slice(0, TOP_LIMIT),
+    showSeparator: false,
+    belowSeparatorRow: null,
+    actualInRanked: true
+  };
+}
+
 export default function Leaderboard() {
   const [topActualRecord, setTopActualRecord] = useState(null);
 
@@ -39,55 +70,17 @@ export default function Leaderboard() {
     fetchLeaderboard();
   }, []);
 
-  const actualRow = useMemo(() => {
-    if (!topActualRecord) return null;
+  const actualRow = topActualRecord
+    ? {
+        userOne: topActualRecord.user_one_username ?? '--',
+        userTwo: topActualRecord.user_two_username ?? '--',
+        score: Number.isFinite(Number(topActualRecord.high_score))
+          ? Number(topActualRecord.high_score)
+          : 0
+      }
+    : null;
 
-    const userOne =
-      topActualRecord.user_one_username ??
-      '--';
-    const userTwo =
-      topActualRecord.user_two_username ??
-      '--';
-    const score = Number(topActualRecord.high_score ?? 0);
-
-    return {
-      userOne,
-      userTwo,
-      score: Number.isFinite(score) ? score : 0
-    };
-  }, [topActualRecord]);
-
-  const leaderboardState = useMemo(() => {
-    if (!actualRow) {
-      return {
-        rankedRows: dummyLeaderboard.slice(0, TOP_LIMIT),
-        showSeparator: true,
-        belowSeparatorRow: null,
-        actualInRanked: false
-      };
-    }
-
-    const insertionIndex = dummyLeaderboard.findIndex((row) => actualRow.score > row.score);
-    if (insertionIndex === -1) {
-      return {
-        rankedRows: dummyLeaderboard.slice(0, TOP_LIMIT),
-        showSeparator: true,
-        belowSeparatorRow: actualRow,
-        actualInRanked: false
-      };
-    }
-
-    const rankedRows = [...dummyLeaderboard];
-    rankedRows.splice(insertionIndex, 0, actualRow);
-    const topRankedRows = rankedRows.slice(0, TOP_LIMIT);
-
-    return {
-      rankedRows: topRankedRows,
-      showSeparator: false,
-      belowSeparatorRow: null,
-      actualInRanked: true
-    };
-  }, [actualRow]);
+  const leaderboardState = buildLeaderboardState(actualRow);
 
   return (
     <div className="card bg-base-100 shadow-2xl border border-base-300">

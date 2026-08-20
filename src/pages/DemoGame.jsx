@@ -1,11 +1,6 @@
-import { useState, useEffect } from 'react'
 import GameEngine from '../components/GameEngine';
-import Loading from '../components/Loading';
 
 export default function DemoGame() {
-    const [loading, setLoading] = useState(false);
-    const [childKey, setChildKey] = useState(0);
-
     // Static message for demo
     const DEMO_MESSAGE = "YOU HAVE DISCOVERED A HIDDEN WORLD";
 
@@ -56,19 +51,12 @@ export default function DemoGame() {
         initial_revealed: []
     };
 
-    useEffect(() => {
-        setLoading(false);
-    }, []);
-
-    if (loading) return <Loading />;
-
     function handleTryAgain() {
         window.location.reload();
     }
 
     return (
         <GameEngine
-            key={childKey}
             gameId="demo-game"
             message={DEMO_MESSAGE}
             onTryAgain={handleTryAgain}

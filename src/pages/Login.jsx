@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../context/useAuth';
 import { supabase } from '../lib/supabaseClient';
 import HowToPlay from '../components/HowToPlay';
 import Leaderboard from '../components/Leaderboard';

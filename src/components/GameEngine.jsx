@@ -5,11 +5,12 @@ import Keyboard from "./Keyboard";
 import Lives from "./Lives";
 import Modal from "./Modal";
 import ConfirmationModal from "./ConfirmationModal";
-import { supabase } from '../lib/supabaseClient';
-import { useAuth } from '../context/AuthContext';
-import { useGameRefresh } from '../context/GameRefreshContext';
+import { useAuth } from '../context/useAuth';
+import { useGameRefresh } from '../context/useGameRefresh';
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { dailyPuzzleService, gameCompletionService } from '../services/GameServices';
+import { repositories } from '../repositories/SupabaseRepositories';
 
 export default function GameEngine({
   gameId,
@@ -28,7 +29,7 @@ export default function GameEngine({
   const { triggerRefresh } = useGameRefresh();
 
   const [showGiveUpModal, setShowGiveUpModal] = useState(false);
-  const [startTime] = useState(Date.now());
+  const [startTime] = useState(() => Date.now());
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
 
   const [attemptsUsed, setAttemptsUsed] = useState(dailyStatus?.attempts_used || 0);
@@ -96,18 +97,9 @@ export default function GameEngine({
 
         setAttemptsUsed(newAttempts);
 
-        const { data, error } = await supabase.from("daily_puzzle_attempts").upsert({
-          user_id: user.id,
-          puzzle_date: new Date().toISOString().split("T")[0],
-          attempts_used: newAttempts,
-          solved: false
-        });
+        const data = await dailyPuzzleService.recordLoss(user.id, newAttempts);
 
         console.log("Upserted daily puzzle attempt:", data);
-
-        if (error) {
-          console.error("Error updating daily puzzle attempts:", error);
-        }
       }
     };
 
@@ -128,18 +120,8 @@ export default function GameEngine({
 
         const finishTime = Math.floor((Date.now() - startTime) / 1000);
 
-        const { data, error } = await supabase.from("daily_puzzle_attempts").upsert({
-          user_id: user.id,
-          puzzle_date: new Date().toISOString().split("T")[0],
-          solved: true,
-          attempts_used: newAttempts,
-          best_time_seconds: finishTime
-        });
+        const data = await dailyPuzzleService.recordCompletion(user.id, newAttempts, finishTime);
         console.log("Upserted daily puzzle completion:", data);
-
-        if (error) {
-          console.error("Error updating daily puzzle completion:", error);
-        }
 
         setSolved(true);
       }
@@ -154,18 +136,7 @@ export default function GameEngine({
     if (!latestStateRef.current) return;
 
     try {
-      await supabase
-        .from('game_sessions')
-        .update({
-          guesses: latestStateRef.current.guesses,
-          revealed_indices: latestStateRef.current.revealedIndices,
-          hints_used: latestStateRef.current.hintsUsed,
-          lives: latestStateRef.current.lives,
-          active_index: latestStateRef.current.activeIndex,
-          updated_at: new Date().toISOString()
-        })
-        .eq('session_id', session.session_id)
-        .eq('user_id', user.id);
+      await repositories.sessions.updateProgress(session.session_id, user.id, latestStateRef.current);
 
       triggerRefresh();
     } catch (error) {
@@ -194,15 +165,7 @@ export default function GameEngine({
   const confirmGiveUp = async () => {
     setShowGiveUpModal(false);
 
-    await supabase
-      .from('game_sessions')
-      .delete()
-      .eq('game_id', gameId);
-
-    await supabase
-      .from('games')
-      .update({ status: 'GAVE_UP' })
-      .eq('game_id', gameId);
+    await gameCompletionService.giveUp(gameId);
 
     navigate('/');
   };

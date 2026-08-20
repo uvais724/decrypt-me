@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { supabase } from '../lib/supabaseClient';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../context/useAuth';
 import Loading from '../components/Loading';
 import { AgGridReact } from 'ag-grid-react';
 // import 'ag-grid-community/styles/ag-grid.css';

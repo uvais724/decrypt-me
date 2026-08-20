@@ -1,6 +1,7 @@
 // hooks/useCryptogramGame.js
 import { useMemo, useState, useCallback, useEffect } from "react";
-import { ALPHABET_REGEX, CircularSuccessorIndex, selectRandomUnrevealedIndex } from "../helper/helper";
+import { ALPHABET_REGEX } from "../helper/helper";
+import { CryptogramGame } from "../domain/CryptogramGame";
 
 export function useCryptogramGame(
     message,
@@ -10,7 +11,10 @@ export function useCryptogramGame(
     } = {},
     blocked = false
 ) {
-    const chars = useMemo(() => message.split(""), [message]);
+    const game = useMemo(
+        () => new CryptogramGame({ message, initialLives, initialState }),
+        [message, initialLives, initialState]
+    );
 
     /* ------------------ CORE STATE ------------------ */
     const [lives, setLives] = useState(initialState?.lives ?? initialLives);
@@ -25,85 +29,41 @@ export function useCryptogramGame(
     const [isGameComplete, setIsGameComplete] = useState(false);
 
     /* ------------------ CRYPTOGRAM MAP (STABLE) ------------------ */
-    const cryptogramMap = useMemo(
-        () => new Map(Object.entries(initialState?.cryptogram_map ?? {})),
-        [initialState?.cryptogram_map]
-    );
-
     /* ------------------ DERIVED MAPS ------------------ */
 
     const letterToIndices = useMemo(() => {
-        const map = {};
-        chars.forEach((char, i) => {
-            if (ALPHABET_REGEX.test(char)) {
-                map[char] ??= [];
-                map[char].push(i);
-            }
-        });
-        return map;
-    }, [chars]);
+        return game.getLetterToIndices();
+    }, [game]);
 
     const cryptogramNumbers = useMemo(() => {
-        const obj = {};
-        cryptogramMap.forEach((value, key) => {
-            obj[key] = value;
-        });
-        return obj;
-    }, [cryptogramMap]);
+        return game.getCryptogramNumbers();
+    }, [game]);
 
 
     const disabledKeys = useMemo(() => {
-        const revealedSet = new Set(revealedIndices);
-        return new Set(
-            Object.entries(letterToIndices)
-                .filter(([, idxs]) => idxs.every(i => revealedSet.has(i)))
-                .map(([letter]) => letter)
-        );
-    }, [letterToIndices, revealedIndices]);
+        return game.getDisabledKeys(letterToIndices, revealedIndices);
+    }, [game, letterToIndices, revealedIndices]);
 
     const partiallyRevealedKeys = useMemo(() => {
-        const revealedSet = new Set(revealedIndices);
-        return new Set(
-            Object.entries(letterToIndices)
-                .filter(([, idxs]) => {
-                    const r = idxs.filter(i => revealedSet.has(i)).length;
-                    return r > 0 && r < idxs.length;
-                })
-                .map(([letter]) => letter)
-        );
-    }, [letterToIndices, revealedIndices]);
+        return game.getPartiallyRevealedKeys(letterToIndices, revealedIndices);
+    }, [game, letterToIndices, revealedIndices]);
 
     const board = useMemo(() => {
-        return chars.map((char, i) => {
-            const charValue = cryptogramMap.get(char);
-            const isHint = revealedIndices.includes(i);
-            const userGuess = guesses[charValue];
-
-            return {
-                index: i,
-                letter: char,
-                value: charValue,
-                // ONLY true if it was one of the specific random indices picked
-                revealed: isHint,
-                // The value to display in the box (either the hint or what the user typed)
-                displayLetter: isHint ? char : (userGuess || "")
-            };
-        });
-    }, [chars, cryptogramMap, guesses, revealedIndices]);
+        return game.buildBoard(guesses, revealedIndices);
+    }, [game, guesses, revealedIndices]);
 
     /* ------------------ GAME LOGIC ------------------ */
 
     const moveToNextIndex = useCallback(
         (current, revealed) => {
-            // Successor DSU chooses the next playable cell after guesses/hints.
-            return new CircularSuccessorIndex(chars, revealed).nextAfter(current);
+            return game.moveToNextIndex(current, revealed);
         },
-        [chars]
+        [game]
     );
 
     const totalLetters = useMemo(
-        () => chars.filter(c => ALPHABET_REGEX.test(c)).length,
-        [chars]
+        () => game.getTotalLetters(),
+        [game]
     );
 
     const guessLetter = useCallback(
@@ -132,11 +92,10 @@ export function useCryptogramGame(
     );
 
     const revealRandomCell = useCallback(() => {
-        // Fenwick rank selection keeps hint choice uniform across unrevealed cells.
-        const chosenIndex = selectRandomUnrevealedIndex(chars, revealedIndices);
+        const chosenIndex = game.chooseHintIndex(revealedIndices);
         if (chosenIndex === -1) return;
 
-        const chosenLetter = chars[chosenIndex];
+        const chosenLetter = game.chars[chosenIndex];
 
         setRevealedIndices(prev => {
             const next = [...prev, chosenIndex];
@@ -154,7 +113,7 @@ export function useCryptogramGame(
 
         setGuesses(g => ({ ...g, [chosenIndex]: chosenLetter }));
         setHintsUsed(h => h + 1);
-    }, [chars, moveToNextIndex, revealedIndices, totalLetters]);
+    }, [game, moveToNextIndex, revealedIndices, totalLetters]);
 
     /* ------------------ KEYBOARD INPUT ------------------ */
 

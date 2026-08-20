@@ -1,7 +1,6 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabaseClient';
-
-const AuthContext = createContext(null);
+import { AuthContext } from './authContextValue';
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
@@ -37,7 +36,7 @@ export const AuthProvider = ({ children }) => {
 
     if (error) {
       // attempt to create the user, then sign in again
-      const { data: signUpData, error: signUpError } = await supabase.auth.signUp({ email, password });
+      const { error: signUpError } = await supabase.auth.signUp({ email, password });
       if (signUpError) throw signUpError;
 
       const { data: signInAfterData, error: signInAfterError } = await supabase.auth.signInWithPassword({ email, password });
@@ -71,5 +70,3 @@ export const AuthProvider = ({ children }) => {
     </AuthContext.Provider>
   );
 };
-
-export const useAuth = () => useContext(AuthContext);

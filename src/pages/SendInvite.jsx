@@ -1,14 +1,14 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { supabase } from '../lib/supabaseClient';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../context/useAuth';
 
 export default function SendInvite() {
   const [email, setEmail] = useState('');
   const [checkUser, setCheckUser] = useState(false);
   const [checkUserFlag, setCheckUserFlag] = useState(null);
   const [relationshipType, setRelationshipType] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [, setLoading] = useState(false);
   const [error, setError] = useState('');
 
   const {user} = useAuth();

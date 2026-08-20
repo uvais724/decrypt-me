@@ -29,36 +29,41 @@ export default function ScoreIncrement({
   label = 'Pair Score',
   className = ''
 }) {
-  const [animatedScore, setAnimatedScore] = useState(0);
   const safePreviousScore = Number.isFinite(Number(previousScore)) ? Number(previousScore) : 0;
   const safeCurrentScore = Number.isFinite(Number(currentScore)) ? Number(currentScore) : 0;
   const safeIncrementBy = Number.isFinite(Number(incrementBy)) ? Number(incrementBy) : 1;
+  const [animatedScore, setAnimatedScore] = useState(safePreviousScore);
 
   useEffect(() => {
-    setAnimatedScore(safePreviousScore);
-    if (safeCurrentScore <= safePreviousScore) {
-      setAnimatedScore(safeCurrentScore);
-      return;
-    }
-
-    const durationMs = 700;
-    const start = performance.now();
     let rafId = 0;
 
-    const tick = (now) => {
-      const elapsed = Math.min(1, (now - start) / durationMs);
-      const eased = 1 - Math.pow(1 - elapsed, 3);
-      const nextValue = Math.round(
-        safePreviousScore + (safeCurrentScore - safePreviousScore) * eased
-      );
-      setAnimatedScore(nextValue);
+    rafId = requestAnimationFrame(() => {
+      setAnimatedScore(safePreviousScore);
 
-      if (elapsed < 1) {
-        rafId = requestAnimationFrame(tick);
+      if (safeCurrentScore <= safePreviousScore) {
+        setAnimatedScore(safeCurrentScore);
+        return;
       }
-    };
 
-    rafId = requestAnimationFrame(tick);
+      const durationMs = 700;
+      const start = performance.now();
+
+      const tick = (now) => {
+        const elapsed = Math.min(1, (now - start) / durationMs);
+        const eased = 1 - Math.pow(1 - elapsed, 3);
+        const nextValue = Math.round(
+          safePreviousScore + (safeCurrentScore - safePreviousScore) * eased
+        );
+        setAnimatedScore(nextValue);
+
+        if (elapsed < 1) {
+          rafId = requestAnimationFrame(tick);
+        }
+      };
+
+      rafId = requestAnimationFrame(tick);
+    });
+
     return () => cancelAnimationFrame(rafId);
   }, [safePreviousScore, safeCurrentScore]);
 
