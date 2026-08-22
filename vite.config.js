@@ -12,4 +12,8 @@ export default defineConfig({
     }),
     tailwindcss(),
   ],
+  test: {
+    environment: 'node',
+    setupFiles: ['./src/test/setup.js'],
+  },
 })
