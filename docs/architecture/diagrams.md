@@ -67,7 +67,7 @@ sequenceDiagram
 ```mermaid
 classDiagram
   class GameCreationService {
-    +createFriendGame({senderId, receiverId, promptText}) Promise
+    +createFriendGame(senderId, receiverId, promptText) Promise
   }
 
   class SinglePlayerGameService {
